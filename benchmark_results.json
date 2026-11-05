@@ -1,0 +1,153 @@
+{
+  "overall": {
+    "num_episodes": 21,
+    "sr": 90.47619047619048,
+    "osr": 90.47619047619048,
+    "spl": 90.47619047619048,
+    "ndtw": 94.10005846379205,
+    "sdtw": 87.07392223644818,
+    "mean_nav_error": 0.3476190476190476,
+    "mean_trajectory_len": 10.500112296583017,
+    "mean_steps": 3.0476190476190474,
+    "unreliability_rate": 23.809523809523807
+  },
+  "by_language": {
+    "en": {
+      "num_episodes": 7,
+      "sr": 100.0,
+      "osr": 100.0,
+      "spl": 100.0,
+      "ndtw": 94.89659764038656,
+      "sdtw": 94.89659764038656,
+      "mean_nav_error": 0.0,
+      "mean_trajectory_len": 10.847731344202066,
+      "mean_steps": 3.142857142857143,
+      "unreliability_rate": 14.285714285714285
+    },
+    "hi": {
+      "num_episodes": 7,
+      "sr": 85.71428571428571,
+      "osr": 85.71428571428571,
+      "spl": 85.71428571428571,
+      "ndtw": 96.20957695800702,
+      "sdtw": 85.71428571428571,
+      "mean_nav_error": 0.5285714285714286,
+      "mean_trajectory_len": 10.319159915630637,
+      "mean_steps": 3.0,
+      "unreliability_rate": 28.57142857142857
+    },
+    "te": {
+      "num_episodes": 7,
+      "sr": 85.71428571428571,
+      "osr": 85.71428571428571,
+      "spl": 85.71428571428571,
+      "ndtw": 91.19400079298254,
+      "sdtw": 80.61088335467227,
+      "mean_nav_error": 0.5142857142857142,
+      "mean_trajectory_len": 10.333445629916351,
+      "mean_steps": 3.0,
+      "unreliability_rate": 28.57142857142857
+    }
+  },
+  "by_split": {
+    "seen": {
+      "num_episodes": 12,
+      "sr": 91.66666666666666,
+      "osr": 91.66666666666666,
+      "spl": 91.66666666666666,
+      "ndtw": 91.83495047262174,
+      "sdtw": 85.71269724711766,
+      "mean_nav_error": 0.30833333333333335,
+      "mean_trajectory_len": 10.975196519020281,
+      "mean_steps": 3.1666666666666665,
+      "unreliability_rate": 8.333333333333332
+    },
+    "unseen": {
+      "num_episodes": 9,
+      "sr": 88.88888888888889,
+      "osr": 88.88888888888889,
+      "spl": 88.88888888888889,
+      "ndtw": 97.12020245201907,
+      "sdtw": 88.88888888888889,
+      "mean_nav_error": 0.39999999999999997,
+      "mean_trajectory_len": 9.866666666666667,
+      "mean_steps": 2.888888888888889,
+      "unreliability_rate": 44.44444444444444
+    }
+  },
+  "matrix": {
+    "en_seen": {
+      "num_episodes": 4,
+      "sr": 100.0,
+      "osr": 100.0,
+      "spl": 100.0,
+      "ndtw": 91.06904587067648,
+      "sdtw": 91.06904587067648,
+      "mean_nav_error": 0.0,
+      "mean_trajectory_len": 11.283529852353615,
+      "mean_steps": 3.25,
+      "unreliability_rate": 0.0
+    },
+    "en_unseen": {
+      "num_episodes": 3,
+      "sr": 100.0,
+      "osr": 100.0,
+      "spl": 100.0,
+      "ndtw": 100.0,
+      "sdtw": 100.0,
+      "mean_nav_error": 0.0,
+      "mean_trajectory_len": 10.266666666666666,
+      "mean_steps": 3.0,
+      "unreliability_rate": 33.33333333333333
+    },
+    "hi_seen": {
+      "num_episodes": 4,
+      "sr": 75.0,
+      "osr": 75.0,
+      "spl": 75.0,
+      "ndtw": 93.36675967651229,
+      "sdtw": 75.0,
+      "mean_nav_error": 0.925,
+      "mean_trajectory_len": 10.358529852353614,
+      "mean_steps": 3.0,
+      "unreliability_rate": 25.0
+    },
+    "hi_unseen": {
+      "num_episodes": 3,
+      "sr": 100.0,
+      "osr": 100.0,
+      "spl": 100.0,
+      "ndtw": 100.0,
+      "sdtw": 100.0,
+      "mean_nav_error": 0.0,
+      "mean_trajectory_len": 10.266666666666666,
+      "mean_steps": 3.0,
+      "unreliability_rate": 33.33333333333333
+    },
+    "te_seen": {
+      "num_episodes": 4,
+      "sr": 100.0,
+      "osr": 100.0,
+      "spl": 100.0,
+      "ndtw": 91.06904587067648,
+      "sdtw": 91.06904587067648,
+      "mean_nav_error": 0.0,
+      "mean_trajectory_len": 11.283529852353615,
+      "mean_steps": 3.25,
+      "unreliability_rate": 0.0
+    },
+    "te_unseen": {
+      "num_episodes": 3,
+      "sr": 66.66666666666666,
+      "osr": 66.66666666666666,
+      "spl": 66.66666666666666,
+      "ndtw": 91.36060735605726,
+      "sdtw": 66.66666666666666,
+      "mean_nav_error": 1.2,
+      "mean_trajectory_len": 9.066666666666666,
+      "mean_steps": 2.6666666666666665,
+      "unreliability_rate": 66.66666666666666
+    }
+  },
+  "num_episodes_evaluated": 21
+}
