@@ -308,7 +308,10 @@ class SimulatorRequestHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         parsed = urlparse(self.path)
-        if parsed.path == "/api/episodes":
+        if parsed.path in ("/login", "/login/"):
+            self.path = "/login.html"
+            super().do_GET()
+        elif parsed.path == "/api/episodes":
             episodes = get_rxr_episodes()
             payload = [
                 {
@@ -352,6 +355,18 @@ class SimulatorRequestHandler(http.server.SimpleHTTPRequestHandler):
         elif parsed.path == "/api/backtrack":
             res = GLOBAL_SESSION.backtrack()
             self._send_json(res)
+
+        elif parsed.path == "/api/login":
+            username = data.get("username", "").strip()
+            password = data.get("password", "").strip()
+            if username:
+                role = "Guest Explorer" if "guest" in username.lower() else "Lead Researcher"
+                self._send_json({"authenticated": True, "username": username, "role": role})
+            else:
+                self._send_json({"authenticated": False, "error": "Username required"})
+
+        elif parsed.path == "/api/logout":
+            self._send_json({"logged_out": True})
 
         else:
             self.send_error(404, "Endpoint not found")

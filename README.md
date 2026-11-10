@@ -56,6 +56,9 @@ python run_simulator.py --port 8080
 ```
 Open your browser at **[http://localhost:8080](http://localhost:8080)**.
 
+- **Authentication Terminal**: Access the modern minimalistic login interface at `/login.html` or sign in with 1-click **Guest Access** / demo credentials (`researcher` / `rxr-vln-2026`).
+- **Cockpit Dashboard**: Experience panoramic indoor viewpoints, 2D floorplan graph, word-level cross-attention heatmaps across English, Hindi, and Telugu, and real-time uncertainty quantification.
+
 ---
 
 ## Citation & Reference

@@ -553,6 +553,27 @@
   langButtons.hi.addEventListener("click", () => switchLanguage("hi"));
   langButtons.te.addEventListener("click", () => switchLanguage("te"));
 
+  // User session sync
+  (function initUserSession() {
+    const raw = localStorage.getItem('rxr_session') || sessionStorage.getItem('rxr_session');
+    if (raw) {
+      try {
+        const sess = JSON.parse(raw);
+        const nameEl = document.getElementById('user-display-name');
+        if (nameEl && sess.username) {
+          nameEl.textContent = sess.username;
+        }
+      } catch (_) {}
+    }
+  })();
+
+  // Global logout handler
+  window.logout = function() {
+    localStorage.removeItem('rxr_session');
+    sessionStorage.removeItem('rxr_session');
+    window.location.href = 'login.html?logout=true';
+  };
+
   // Initial boot
   fetchInitialState();
 })();

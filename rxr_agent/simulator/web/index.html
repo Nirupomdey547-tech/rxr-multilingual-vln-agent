@@ -6,6 +6,15 @@
   <title>RxR Multilingual VLN Decision Agent</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Auth Guard: ensure active session
+    (function() {
+      const sess = localStorage.getItem('rxr_session') || sessionStorage.getItem('rxr_session');
+      if (!sess) {
+        window.location.href = 'login.html';
+      }
+    })();
+  </script>
 </head>
 <body class="bg-[#0a0e17] text-slate-100 min-h-screen p-4 flex flex-col gap-4">
 
@@ -56,6 +65,24 @@
         </button>
         <button id="lang-te" class="lang-btn px-2.5 py-1 rounded font-medium text-slate-300 hover:text-white transition">
           తెలుగు (Telugu)
+        </button>
+      </div>
+
+      <!-- User Profile & Sign Out -->
+      <div class="flex items-center gap-2 pl-2 border-l border-slate-800">
+        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="user-display-name" class="font-medium text-slate-200">Researcher</span>
+        </div>
+        <button 
+          id="btn-logout" 
+          onclick="logout()" 
+          class="p-1.5 rounded-lg bg-slate-900 hover:bg-rose-950/60 hover:text-rose-300 hover:border-rose-800 text-slate-400 border border-slate-800 transition flex items-center justify-center group" 
+          title="Sign Out"
+        >
+          <svg class="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
         </button>
       </div>
     </div>
