@@ -1,13 +1,16 @@
 :root {
   --bg-primary: #0a0e17;
-  --bg-card: #121826;
-  --bg-card-hover: #1a2337;
-  --border-color: #24314d;
-  --text-primary: #f1f5f9;
+  --bg-surface: #0f1626;
+  --bg-card: #131c31;
+  --bg-card-hover: #18233d;
+  --border-color: #223254;
+  --border-light: #2e4370;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
   --accent-cyan: #06b6d4;
   --accent-blue: #3b82f6;
-  --accent-green: #10b981;
+  --accent-emerald: #10b981;
   --accent-amber: #f59e0b;
   --accent-rose: #f43f5e;
   --accent-purple: #8b5cf6;
@@ -27,52 +30,102 @@ body {
   overflow-x: hidden;
 }
 
-/* Glassmorphism card */
+/* Glassmorphism Cards */
 .glass-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  border-radius: 14px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.45);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.glass-card:hover {
+  border-color: var(--border-light);
+}
+
+/* Navigation Tabs */
+.workspace-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.workspace-tab:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.workspace-tab.active {
+  color: #38bdf8;
+  background: rgba(14, 165, 233, 0.12);
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 0 16px rgba(14, 165, 233, 0.15);
 }
 
 /* Attention word badge */
 .attn-word {
   display: inline-block;
-  padding: 2px 6px;
-  margin: 2px;
+  padding: 3px 7px;
+  margin: 2px 3px;
   border-radius: 6px;
-  transition: all 0.25s ease;
+  transition: all 0.2s ease;
   font-size: 0.95rem;
+  border: 1px solid transparent;
+}
+
+.attn-word:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.15);
 }
 
 /* Status badges */
 .badge-reliable {
   background-color: rgba(16, 185, 129, 0.15);
   color: #34d399;
-  border: 1px solid rgba(16, 185, 129, 0.4);
+  border: 1px solid rgba(16, 185, 129, 0.45);
 }
 
 .badge-cautious {
   background-color: rgba(245, 158, 11, 0.15);
   color: #fbbf24;
-  border: 1px solid rgba(245, 158, 11, 0.4);
+  border: 1px solid rgba(245, 158, 11, 0.45);
 }
 
 .badge-unreliable {
   background-color: rgba(244, 63, 94, 0.15);
   color: #fb7185;
-  border: 1px solid rgba(244, 63, 94, 0.4);
-  animation: pulse-red 1.5s infinite;
+  border: 1px solid rgba(244, 63, 94, 0.45);
+  animation: pulse-red 1.6s infinite;
 }
 
 @keyframes pulse-red {
   0%, 100% { box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
-  50% { box-shadow: 0 0 14px 4px rgba(244, 63, 94, 0.6); }
+  50% { box-shadow: 0 0 16px 4px rgba(244, 63, 94, 0.65); }
 }
 
 /* Progress bar fill */
 .progress-fill {
-  transition: width 0.3s ease;
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Interactive Candidate Items */
+.candidate-row {
+  transition: all 0.2s ease;
+}
+
+.candidate-row:hover {
+  border-color: rgba(6, 182, 212, 0.5);
+  transform: translateX(2px);
 }
 
 /* Custom scrollbars */
@@ -81,12 +134,12 @@ body {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0f172a;
+  background: #0a0e17;
 }
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: #24314d;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: #384f7a;
 }
