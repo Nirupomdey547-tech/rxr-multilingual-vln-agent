@@ -5,6 +5,7 @@
   let playTimer = null;
   let currentLanguage = "en";
   let activeTab = "action";
+  let studioViewMode = "camera"; // "camera" or "map"
 
   // Google Maps & Smooth Motion State
   let animAgent = {
@@ -25,8 +26,6 @@
   };
 
   let mapZoom = 1.0;
-  let mapPanX = 0;
-  let mapPanY = 0;
   let animFrameId = null;
 
   // Room Icons mapping
@@ -97,6 +96,15 @@
 
   const elCandidatesList = document.getElementById("candidates-list");
 
+  // Destination Search Elements
+  const elGmapSearchFrom = document.getElementById("gmap-search-from");
+  const elDestinationSelect = document.getElementById("destination-select");
+  const elQuickLocationChips = document.getElementById("quick-location-chips");
+  const elViewportStage = document.getElementById("viewport-stage");
+  const elStudioMapStage = document.getElementById("studio-map-stage");
+  const elViewModeCamera = document.getElementById("view-mode-camera");
+  const elViewModeMap = document.getElementById("view-mode-map");
+
   // Google Maps Banner Elements
   const elGmapTurnIcon = document.getElementById("gmap-turn-icon");
   const elGmapPrimaryInst = document.getElementById("gmap-primary-instruction");
@@ -126,6 +134,9 @@
 
   const elCanvas = document.getElementById("graph-canvas");
   const ctx = elCanvas ? elCanvas.getContext("2d") : null;
+
+  const elStudioCanvas = document.getElementById("studio-canvas");
+  const studioCtx = elStudioCanvas ? elStudioCanvas.getContext("2d") : null;
 
   const elBtnReset = document.getElementById("btn-reset");
   const elBtnStep = document.getElementById("btn-step");
@@ -171,6 +182,58 @@
     }
   };
 
+  // Switch between Panoramic Camera View and Embedded Google Map in Action Studio
+  window.switchStudioView = function(mode) {
+    studioViewMode = mode;
+    if (mode === "map") {
+      if (elViewportStage) elViewportStage.classList.add("hidden");
+      if (elStudioMapStage) elStudioMapStage.classList.remove("hidden");
+      if (elViewModeMap) {
+        elViewModeMap.className = "px-2 py-0.5 rounded font-medium bg-cyan-600 text-white transition";
+      }
+      if (elViewModeCamera) {
+        elViewModeCamera.className = "px-2 py-0.5 rounded font-medium text-slate-300 hover:text-white transition";
+      }
+    } else {
+      if (elViewportStage) elViewportStage.classList.remove("hidden");
+      if (elStudioMapStage) elStudioMapStage.classList.add("hidden");
+      if (elViewModeCamera) {
+        elViewModeCamera.className = "px-2 py-0.5 rounded font-medium bg-cyan-600 text-white transition";
+      }
+      if (elViewModeMap) {
+        elViewModeMap.className = "px-2 py-0.5 rounded font-medium text-slate-300 hover:text-white transition";
+      }
+    }
+  };
+
+  // Choose Destination Handler (Google Maps feature)
+  window.onSelectDestination = async function(destNodeId) {
+    if (!destNodeId || !simState) return;
+
+    try {
+      const res = await fetch("/api/set_destination", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ destination_node: destNodeId })
+      });
+      const data = await res.json();
+      updateUI(data);
+
+      // Auto switch to Google Map view to immediately show the calculated way
+      if (activeTab === "action" && studioViewMode !== "map") {
+        window.switchStudioView("map");
+      }
+    } catch (err) {
+      console.error("Failed to set destination:", err);
+    }
+  };
+
+  window.calculateAndShowRoute = function() {
+    if (elDestinationSelect) {
+      window.onSelectDestination(elDestinationSelect.value);
+    }
+  };
+
   // Google Maps Zoom & Recenter controls
   window.zoomMap = function(factor) {
     mapZoom = Math.max(0.6, Math.min(2.5, mapZoom * factor));
@@ -178,8 +241,6 @@
 
   window.recenterMap = function() {
     mapZoom = 1.0;
-    mapPanX = 0;
-    mapPanY = 0;
   };
 
   // Cubic ease-in-out
@@ -193,6 +254,48 @@
     if (diff < -180) diff += 360;
     if (diff > 180) diff -= 360;
     return diff;
+  }
+
+  // Setup click interaction on canvases to choose destination directly
+  function setupCanvasClick(canvas) {
+    if (!canvas) return;
+    canvas.addEventListener("click", (evt) => {
+      if (!simState || !simState.graph || !simState.graph.nodes) return;
+      const rect = canvas.getBoundingClientRect();
+      const clickX = (evt.clientX - rect.left) * (canvas.width / rect.width);
+      const clickY = (evt.clientY - rect.top) * (canvas.height / rect.height);
+
+      const nodes = simState.graph.nodes;
+      const xs = Object.values(nodes).map(n => n.x);
+      const ys = Object.values(nodes).map(n => n.y);
+      const minX = Math.min(...xs) - 1.5;
+      const maxX = Math.max(...xs) + 1.5;
+      const minY = Math.min(...ys) - 1.5;
+      const maxY = Math.max(...ys) + 1.5;
+      const spanX = Math.max(maxX - minX, 1.0);
+      const spanY = Math.max(maxY - minY, 1.0);
+      const pad = canvas.width > 600 ? 55 : 35;
+
+      const toCanvasX = (x) => pad + ((x - minX) / spanX) * (canvas.width - 2 * pad);
+      const toCanvasY = (y) => canvas.height - (pad + ((y - minY) / spanY) * (canvas.height - 2 * pad));
+
+      let closestNode = null;
+      let minDist = 32;
+
+      Object.values(nodes).forEach(n => {
+        const nx = toCanvasX(n.x);
+        const ny = toCanvasY(n.y);
+        const d = Math.hypot(clickX - nx, clickY - ny);
+        if (d < minDist) {
+          minDist = d;
+          closestNode = n;
+        }
+      });
+
+      if (closestNode) {
+        window.onSelectDestination(closestNode.id);
+      }
+    });
   }
 
   // Continuous animation loop for Google Maps canvas rendering (60 FPS)
@@ -255,9 +358,14 @@
         }
       }
 
-      // Draw Google Maps Frame
+      // Draw Google Maps on Floorplan canvas
       if (simState && ctx && elCanvas && activeTab === "floorplan") {
-        renderGoogleMap(timestamp);
+        renderGoogleMapToTarget(ctx, elCanvas, timestamp);
+      }
+
+      // Draw Google Maps on Studio canvas if Studio Map mode is active
+      if (simState && studioCtx && elStudioCanvas && activeTab === "action" && studioViewMode === "map") {
+        renderGoogleMapToTarget(studioCtx, elStudioCanvas, timestamp);
       }
 
       animFrameId = requestAnimationFrame(loop);
@@ -307,6 +415,7 @@
       const data = await res.json();
       if (data && data.episode) {
         initPositionFromState(data);
+        populateDestinationPicker(data);
         updateUI(data);
       } else {
         await resetEpisode(elEpisodeSelect.value, currentLanguage);
@@ -335,6 +444,38 @@
     }
   }
 
+  // Populate Destination Dropdown & Quick Chips
+  function populateDestinationPicker(state) {
+    if (!state || !state.graph || !state.graph.nodes) return;
+    const nodes = state.graph.nodes;
+    const currentGoal = state.episode.goal_node;
+
+    if (elDestinationSelect) {
+      elDestinationSelect.innerHTML = "";
+      Object.values(nodes).forEach(n => {
+        const opt = document.createElement("option");
+        opt.value = n.id;
+        opt.className = "bg-slate-900 text-white";
+        const icon = ROOM_ICONS[n.room_type] || "📍";
+        opt.innerText = `${icon} ${n.room_type.replace(/_/g, " ")} (${n.id})`;
+        if (n.id === currentGoal) opt.selected = true;
+        elDestinationSelect.appendChild(opt);
+      });
+    }
+
+    if (elQuickLocationChips) {
+      elQuickLocationChips.innerHTML = "";
+      Object.values(nodes).forEach(n => {
+        const chip = document.createElement("button");
+        const icon = ROOM_ICONS[n.room_type] || "📍";
+        chip.className = `destination-chip ${n.id === currentGoal ? "active" : ""}`;
+        chip.innerHTML = `<span>${icon}</span><span>${n.room_type.replace(/_/g, " ")}</span>`;
+        chip.onclick = () => window.onSelectDestination(n.id);
+        elQuickLocationChips.appendChild(chip);
+      });
+    }
+  }
+
   async function resetEpisode(episodeId, language) {
     try {
       const res = await fetch("/api/reset", {
@@ -345,6 +486,7 @@
       const data = await res.json();
       animAgent.footsteps = [];
       initPositionFromState(data);
+      populateDestinationPicker(data);
       updateUI(data);
     } catch (err) {
       console.error("Failed to reset episode:", err);
@@ -352,7 +494,7 @@
   }
 
   async function stepSimulation(actionIndex) {
-    if (animAgent.isMoving) return; // Prevent double stepping during animation
+    if (animAgent.isMoving) return;
 
     try {
       const prevNodeId = simState ? simState.state.current_node : null;
@@ -367,7 +509,7 @@
       const nextNodeId = data.state.current_node;
       const nextHeading = data.state.heading;
 
-      // Start smooth interpolated movement from prevNode to nextNode
+      // Start smooth interpolated movement
       if (prevNodeId && nextNodeId) {
         triggerSmoothMovement(prevNodeId, nextNodeId, nextHeading);
       }
@@ -441,7 +583,7 @@
       resetEpisode(elEpisodeSelect.value, currentLanguage).then(() => {
         isPlaying = true;
         if (elPlayIcon) elPlayIcon.innerText = "⏸";
-        if (elPlayText) elPlayText.innerText = "Pause";
+        if (elPlayText) elPlayText.innerText = "Pause Walk";
         if (elBtnPlay) {
           elBtnPlay.classList.replace("bg-emerald-600", "bg-amber-600");
           elBtnPlay.classList.replace("hover:bg-emerald-500", "hover:bg-amber-500");
@@ -453,7 +595,7 @@
 
     isPlaying = true;
     if (elPlayIcon) elPlayIcon.innerText = "⏸";
-    if (elPlayText) elPlayText.innerText = "Pause";
+    if (elPlayText) elPlayText.innerText = "Pause Walk";
     if (elBtnPlay) {
       elBtnPlay.classList.replace("bg-emerald-600", "bg-amber-600");
       elBtnPlay.classList.replace("hover:bg-emerald-500", "hover:bg-amber-500");
@@ -466,7 +608,7 @@
     clearTimeout(playTimer);
     playTimer = null;
     if (elPlayIcon) elPlayIcon.innerText = "▶";
-    if (elPlayText) elPlayText.innerText = "Auto Walk";
+    if (elPlayText) elPlayText.innerText = "Auto Walk to Destination";
     if (elBtnPlay) {
       elBtnPlay.classList.replace("bg-amber-600", "bg-emerald-600");
       elBtnPlay.classList.replace("hover:bg-amber-500", "hover:bg-emerald-500");
@@ -488,6 +630,11 @@
         elSplitBadge.innerText = "Val-Seen";
         elSplitBadge.className = "px-2 py-0.5 text-[10px] font-semibold rounded bg-emerald-950 text-emerald-400 border border-emerald-800";
       }
+    }
+
+    // Origin in Google Maps search bar
+    if (elGmapSearchFrom) {
+      elGmapSearchFrom.innerText = state.state.current_room.replace(/_/g, " ");
     }
 
     // 2. Multilingual Instruction with Word Attention Heatmap
@@ -636,7 +783,7 @@
         if (isRecommended) {
           routeBadge = '<span class="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800 flex items-center gap-1"><span>✅</span> Where to Go</span>';
         } else if (isDeviation) {
-          routeBadge = '<span class="text-[10px] uppercase font-bold text-rose-400 bg-rose-950 px-2 py-0.5 rounded border border-rose-800 flex items-center gap-1"><span>⛔</span> Avoid (Deviation)</span>';
+          routeBadge = '<span class="text-[10px] uppercase font-bold text-rose-400 bg-rose-950 px-2 py-0.5 rounded border border-rose-800 flex items-center gap-1"><span>⛔</span> Avoid</span>';
         }
 
         item.innerHTML = `
@@ -659,10 +806,24 @@
       });
     }
 
-    // 7. Update Google Maps Turn-by-Turn Guidance Banner
+    // 7. Update Destination Dropdown & Chips active states
+    if (elDestinationSelect) {
+      elDestinationSelect.value = state.episode.goal_node;
+    }
+    if (elQuickLocationChips) {
+      Array.from(elQuickLocationChips.children).forEach(chip => {
+        if (chip.innerText.toLowerCase().includes(goalClean.toLowerCase())) {
+          chip.classList.add("active");
+        } else {
+          chip.classList.remove("active");
+        }
+      });
+    }
+
+    // 8. Update Google Maps Turn-by-Turn Guidance Banner
     updateGoogleMapsBanner(state, refPath, currNodeIndex);
 
-    // 8. Update Metrics
+    // 9. Update Metrics
     const m = state.metrics || {};
     if (elMetricSr) {
       if (state.state.is_terminal) {
@@ -683,7 +844,7 @@
     if (elMetricNdtw) elMetricNdtw.innerText = `${m.ndtw}%`;
     if (elMetricNe) elMetricNe.innerText = `${m.navigation_error} m`;
 
-    // 9. Traversal History Log in Floorplan section
+    // 10. Traversal History Log in Floorplan section
     if (elFloorplanHistoryList && state.state.trajectory_nodes) {
       elFloorplanHistoryList.innerHTML = "";
       const traj = state.state.trajectory_nodes;
@@ -720,7 +881,7 @@
       });
     }
 
-    // 10. Update Google Maps Itinerary steps
+    // 11. Update Google Maps Itinerary steps
     updateGoogleMapsItinerary(state, refPath, currNodeIndex);
   }
 
@@ -771,9 +932,8 @@
         elGmapPrimaryInst.innerText = `In ${stepDist}m, ${maneuver} ${nextNode.room_type.replace(/_/g, " ")}`;
       }
     } else {
-      // Off-route / Deviation detected
       if (elGmapTurnIcon) elGmapTurnIcon.innerText = "↩";
-      elGmapPrimaryInst.innerText = `Off Route: Re-route or backtrack to rejoin the recommended path`;
+      elGmapPrimaryInst.innerText = `Recalculating: Follow blue route toward ${state.episode.goal_node.replace(/.*_/, "")}`;
     }
   }
 
@@ -787,7 +947,6 @@
       if (!nodeData) return;
       const isPast = currNodeIndex >= 0 && idx < currNodeIndex;
       const isCurrent = idx === currNodeIndex;
-      const isFuture = currNodeIndex < 0 || idx > currNodeIndex;
       const isGoal = idx === refPath.length - 1;
 
       const item = document.createElement("div");
@@ -823,14 +982,14 @@
   // ==============================================================================
   // GOOGLE MAPS RENDERING ENGINE (Authentic Google Maps Dark Palette & Visuals)
   // ==============================================================================
-  function renderGoogleMap(timestamp) {
-    if (!simState || !simState.graph || !ctx || !elCanvas) return;
+  function renderGoogleMapToTarget(targetCtx, targetCanvas, timestamp) {
+    if (!simState || !simState.graph || !targetCtx || !targetCanvas) return;
     const { nodes, edges } = simState.graph;
-    const W = elCanvas.width;
-    const H = elCanvas.height;
+    const W = targetCanvas.width;
+    const H = targetCanvas.height;
 
-    ctx.save();
-    ctx.clearRect(0, 0, W, H);
+    targetCtx.save();
+    targetCtx.clearRect(0, 0, W, H);
 
     // Compute bounding box
     const xs = Object.values(nodes).map(n => n.x);
@@ -843,29 +1002,29 @@
     const spanX = Math.max(maxX - minX, 1.0);
     const spanY = Math.max(maxY - minY, 1.0);
 
-    const pad = 55;
+    const pad = W > 600 ? 55 : 35;
     const toCanvasX = (x) => pad + ((x - minX) / spanX) * (W - 2 * pad);
     const toCanvasY = (y) => H - (pad + ((y - minY) / spanY) * (H - 2 * pad));
 
     // Google Maps Dark background
-    ctx.fillStyle = "#1e2430";
-    ctx.fillRect(0, 0, W, H);
+    targetCtx.fillStyle = "#1e2430";
+    targetCtx.fillRect(0, 0, W, H);
 
     // Subtle Google Maps Grid Texture
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.03)";
-    ctx.lineWidth = 1;
+    targetCtx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+    targetCtx.lineWidth = 1;
     const gridSize = 40;
     for (let gx = 0; gx < W; gx += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(gx, 0);
-      ctx.lineTo(gx, H);
-      ctx.stroke();
+      targetCtx.beginPath();
+      targetCtx.moveTo(gx, 0);
+      targetCtx.lineTo(gx, H);
+      targetCtx.stroke();
     }
     for (let gy = 0; gy < H; gy += gridSize) {
-      ctx.beginPath();
-      ctx.moveTo(0, gy);
-      ctx.lineTo(W, gy);
-      ctx.stroke();
+      targetCtx.beginPath();
+      targetCtx.moveTo(0, gy);
+      targetCtx.lineTo(W, gy);
+      targetCtx.stroke();
     }
 
     // Determine Reference Route Edges vs Non-Route Edges
@@ -886,28 +1045,28 @@
       const vx = toCanvasX(v.x), vy = toCanvasY(v.y);
 
       // Road Casing
-      ctx.beginPath();
-      ctx.moveTo(ux, uy);
-      ctx.lineTo(vx, vy);
-      ctx.strokeStyle = "#2e384d";
-      ctx.lineWidth = 18;
-      ctx.lineCap = "round";
-      ctx.stroke();
+      targetCtx.beginPath();
+      targetCtx.moveTo(ux, uy);
+      targetCtx.lineTo(vx, vy);
+      targetCtx.strokeStyle = "#2e384d";
+      targetCtx.lineWidth = W > 600 ? 18 : 14;
+      targetCtx.lineCap = "round";
+      targetCtx.stroke();
 
       // Road Inner
-      ctx.beginPath();
-      ctx.moveTo(ux, uy);
-      ctx.lineTo(vx, vy);
-      ctx.strokeStyle = "#252d3d";
-      ctx.lineWidth = 14;
-      ctx.lineCap = "round";
-      ctx.stroke();
+      targetCtx.beginPath();
+      targetCtx.moveTo(ux, uy);
+      targetCtx.lineTo(vx, vy);
+      targetCtx.strokeStyle = "#252d3d";
+      targetCtx.lineWidth = W > 600 ? 14 : 10;
+      targetCtx.lineCap = "round";
+      targetCtx.stroke();
     });
 
     // 2. Draw "Where NOT to Go" (Dead Ends / Deviations / Forbidden branches)
     edges.forEach(e => {
       const isRef = refEdgeKeys.has(`${e.from}->${e.to}`);
-      if (isRef) return; // Only process non-recommended branches
+      if (isRef) return;
 
       const u = nodes[e.from];
       const v = nodes[e.to];
@@ -917,62 +1076,61 @@
       const vx = toCanvasX(v.x), vy = toCanvasY(v.y);
 
       // Red dashed warning route line
-      ctx.beginPath();
-      ctx.moveTo(ux, uy);
-      ctx.lineTo(vx, vy);
-      ctx.setLineDash([6, 6]);
-      ctx.strokeStyle = "rgba(234, 67, 53, 0.75)"; // Google Maps Red
-      ctx.lineWidth = 3.5;
-      ctx.stroke();
-      ctx.setLineDash([]);
+      targetCtx.beginPath();
+      targetCtx.moveTo(ux, uy);
+      targetCtx.lineTo(vx, vy);
+      targetCtx.setLineDash([5, 5]);
+      targetCtx.strokeStyle = "rgba(234, 67, 53, 0.75)";
+      targetCtx.lineWidth = 3;
+      targetCtx.stroke();
+      targetCtx.setLineDash([]);
 
       // Draw ⛔ NO-ENTRY badge at edge midpoint
       const mx = (ux + vx) / 2;
       const my = (uy + vy) / 2;
 
-      ctx.beginPath();
-      ctx.arc(mx, my, 8, 0, 2 * Math.PI);
-      ctx.fillStyle = "#ea4335";
-      ctx.fill();
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
+      targetCtx.beginPath();
+      targetCtx.arc(mx, my, 7, 0, 2 * Math.PI);
+      targetCtx.fillStyle = "#ea4335";
+      targetCtx.fill();
+      targetCtx.strokeStyle = "#ffffff";
+      targetCtx.lineWidth = 1.5;
+      targetCtx.stroke();
 
-      // White minus sign in red circle
-      ctx.beginPath();
-      ctx.moveTo(mx - 4, my);
-      ctx.lineTo(mx + 4, my);
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      targetCtx.beginPath();
+      targetCtx.moveTo(mx - 3.5, my);
+      targetCtx.lineTo(mx + 3.5, my);
+      targetCtx.strokeStyle = "#ffffff";
+      targetCtx.lineWidth = 2;
+      targetCtx.stroke();
     });
 
     // 3. Draw "Where to Go" (Recommended Route - Google Maps Vibrant Blue with Moving Chevrons)
     if (refPath.length >= 2) {
       // Glow casing
-      ctx.beginPath();
+      targetCtx.beginPath();
       const startP = nodes[refPath[0]];
       if (startP) {
-        ctx.moveTo(toCanvasX(startP.x), toCanvasY(startP.y));
+        targetCtx.moveTo(toCanvasX(startP.x), toCanvasY(startP.y));
         for (let i = 1; i < refPath.length; i++) {
           const pt = nodes[refPath[i]];
-          if (pt) ctx.lineTo(toCanvasX(pt.x), toCanvasY(pt.y));
+          if (pt) targetCtx.lineTo(toCanvasX(pt.x), toCanvasY(pt.y));
         }
-        ctx.strokeStyle = "rgba(66, 133, 244, 0.4)";
-        ctx.lineWidth = 12;
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        ctx.stroke();
+        targetCtx.strokeStyle = "rgba(66, 133, 244, 0.4)";
+        targetCtx.lineWidth = W > 600 ? 12 : 9;
+        targetCtx.lineCap = "round";
+        targetCtx.lineJoin = "round";
+        targetCtx.stroke();
 
         // Solid Google Blue Route Ribbon
-        ctx.strokeStyle = "#4285F4";
-        ctx.lineWidth = 7;
-        ctx.stroke();
+        targetCtx.strokeStyle = "#4285F4";
+        targetCtx.lineWidth = W > 600 ? 7 : 5;
+        targetCtx.stroke();
 
         // Inner lighter highlight
-        ctx.strokeStyle = "#8ab4f8";
-        ctx.lineWidth = 2;
-        ctx.stroke();
+        targetCtx.strokeStyle = "#8ab4f8";
+        targetCtx.lineWidth = 2;
+        targetCtx.stroke();
 
         // Draw animated streaming chevrons (>>>) along recommended route
         const phase = (timestamp * 0.04) % 30;
@@ -986,25 +1144,24 @@
           const segDist = Math.hypot(x2 - x1, y2 - y1);
           const angle = Math.atan2(y2 - y1, x2 - x1);
 
-          for (let d = phase; d < segDist - 15; d += 30) {
+          for (let d = phase; d < segDist - 12; d += 28) {
             const cx = x1 + Math.cos(angle) * d;
             const cy = y1 + Math.sin(angle) * d;
 
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(angle);
+            targetCtx.save();
+            targetCtx.translate(cx, cy);
+            targetCtx.rotate(angle);
 
-            // Chevron shape
-            ctx.beginPath();
-            ctx.moveTo(-4, -4);
-            ctx.lineTo(3, 0);
-            ctx.lineTo(-4, 4);
-            ctx.strokeStyle = "#ffffff";
-            ctx.lineWidth = 2;
-            ctx.lineCap = "round";
-            ctx.stroke();
+            targetCtx.beginPath();
+            targetCtx.moveTo(-3.5, -3.5);
+            targetCtx.lineTo(3, 0);
+            targetCtx.lineTo(-3.5, 3.5);
+            targetCtx.strokeStyle = "#ffffff";
+            targetCtx.lineWidth = 1.8;
+            targetCtx.lineCap = "round";
+            targetCtx.stroke();
 
-            ctx.restore();
+            targetCtx.restore();
           }
         }
       }
@@ -1013,25 +1170,24 @@
     // 4. Draw Traversed Agent Trajectory (Glowing Cyan Track)
     const traj = simState.state.trajectory_nodes || [];
     if (traj.length >= 2) {
-      ctx.beginPath();
-      ctx.strokeStyle = "#00e5ff";
-      ctx.lineWidth = 4;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.shadowColor = "rgba(0, 229, 255, 0.8)";
-      ctx.shadowBlur = 8;
+      targetCtx.beginPath();
+      targetCtx.strokeStyle = "#00e5ff";
+      targetCtx.lineWidth = 3.5;
+      targetCtx.lineCap = "round";
+      targetCtx.lineJoin = "round";
+      targetCtx.shadowColor = "rgba(0, 229, 255, 0.8)";
+      targetCtx.shadowBlur = 8;
       const startN = nodes[traj[0]];
       if (startN) {
-        ctx.moveTo(toCanvasX(startN.x), toCanvasY(startN.y));
+        targetCtx.moveTo(toCanvasX(startN.x), toCanvasY(startN.y));
         for (let i = 1; i < traj.length - 1; i++) {
           const pt = nodes[traj[i]];
-          if (pt) ctx.lineTo(toCanvasX(pt.x), toCanvasY(pt.y));
+          if (pt) targetCtx.lineTo(toCanvasX(pt.x), toCanvasY(pt.y));
         }
-        // Connect to real-time moving agent puck position!
-        ctx.lineTo(toCanvasX(animAgent.x), toCanvasY(animAgent.y));
-        ctx.stroke();
+        targetCtx.lineTo(toCanvasX(animAgent.x), toCanvasY(animAgent.y));
+        targetCtx.stroke();
       }
-      ctx.shadowBlur = 0;
+      targetCtx.shadowBlur = 0;
     }
 
     // 5. Draw Footstep breadcrumbs
@@ -1039,10 +1195,10 @@
       const fx = toCanvasX(fs.x);
       const fy = toCanvasY(fs.y);
       const ageAlpha = Math.max(0.1, 0.7 - (animAgent.footsteps.length - fIdx) * 0.025);
-      ctx.beginPath();
-      ctx.arc(fx, fy, 2.5, 0, 2 * Math.PI);
-      ctx.fillStyle = `rgba(0, 229, 255, ${ageAlpha})`;
-      ctx.fill();
+      targetCtx.beginPath();
+      targetCtx.arc(fx, fy, 2, 0, 2 * Math.PI);
+      targetCtx.fillStyle = `rgba(0, 229, 255, ${ageAlpha})`;
+      targetCtx.fill();
     });
 
     // 6. Draw Viewpoint Room Nodes & Google Maps POI markers
@@ -1051,28 +1207,28 @@
       const cy = toCanvasY(n.y);
 
       // Node background pill
-      ctx.beginPath();
-      ctx.arc(cx, cy, 14, 0, 2 * Math.PI);
-      ctx.fillStyle = "#1e293b";
-      ctx.fill();
-      ctx.strokeStyle = "#475569";
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      targetCtx.beginPath();
+      targetCtx.arc(cx, cy, 13, 0, 2 * Math.PI);
+      targetCtx.fillStyle = "#1e293b";
+      targetCtx.fill();
+      targetCtx.strokeStyle = n.id === simState.episode.goal_node ? "#ea4335" : "#475569";
+      targetCtx.lineWidth = n.id === simState.episode.goal_node ? 3 : 2;
+      targetCtx.stroke();
 
       // Room Icon emoji inside node
       const icon = ROOM_ICONS[n.room_type] || "🏠";
-      ctx.font = "13px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(icon, cx, cy + 1);
+      targetCtx.font = "12px sans-serif";
+      targetCtx.textAlign = "center";
+      targetCtx.textBaseline = "middle";
+      targetCtx.fillText(icon, cx, cy + 1);
 
       // Room Name Tag below node
-      ctx.fillStyle = "#e2e8f0";
-      ctx.font = "bold 11px -apple-system, BlinkMacSystemFont, sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
+      targetCtx.fillStyle = "#e2e8f0";
+      targetCtx.font = "bold 10px -apple-system, BlinkMacSystemFont, sans-serif";
+      targetCtx.textAlign = "center";
+      targetCtx.textBaseline = "top";
       const cleanName = n.room_type.replace(/_/g, " ");
-      ctx.fillText(cleanName, cx, cy + 18);
+      targetCtx.fillText(cleanName, cx, cy + 16);
     });
 
     // 7. Draw Destination Pin (Authentic Google Maps Red Teardrop Marker 📍)
@@ -1081,90 +1237,90 @@
       const gx = toCanvasX(goalNode.x);
       const gy = toCanvasY(goalNode.y);
 
-      // Animated gentle bobbing
       const bob = Math.sin(timestamp * 0.004) * 4;
-      const pinY = gy - 18 + bob;
+      const pinY = gy - 16 + bob;
 
       // Pin shadow
-      ctx.beginPath();
-      ctx.ellipse(gx, gy + 4, 10, 4, 0, 0, 2 * Math.PI);
-      ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-      ctx.fill();
+      targetCtx.beginPath();
+      targetCtx.ellipse(gx, gy + 3, 9, 3.5, 0, 0, 2 * Math.PI);
+      targetCtx.fillStyle = "rgba(0, 0, 0, 0.45)";
+      targetCtx.fill();
 
       // Google Red Droplet Pin
-      ctx.save();
-      ctx.translate(gx, pinY);
+      targetCtx.save();
+      targetCtx.translate(gx, pinY);
 
-      // Red pin body
-      ctx.beginPath();
-      ctx.arc(0, -12, 12, Math.PI, 0, false);
-      ctx.bezierCurveTo(12, -4, 0, 10, 0, 16);
-      ctx.bezierCurveTo(0, 10, -12, -4, -12, -12);
-      ctx.closePath();
-      ctx.fillStyle = "#ea4335"; // Google Red
-      ctx.shadowColor = "rgba(234, 67, 53, 0.7)";
-      ctx.shadowBlur = 8;
-      ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.strokeStyle = "#ffffff";
-      ctx.lineWidth = 2;
-      ctx.stroke();
+      targetCtx.beginPath();
+      targetCtx.arc(0, -11, 11, Math.PI, 0, false);
+      targetCtx.bezierCurveTo(11, -3, 0, 9, 0, 15);
+      targetCtx.bezierCurveTo(0, 9, -11, -3, -11, -11);
+      targetCtx.closePath();
+      targetCtx.fillStyle = "#ea4335";
+      targetCtx.shadowColor = "rgba(234, 67, 53, 0.7)";
+      targetCtx.shadowBlur = 8;
+      targetCtx.fill();
+      targetCtx.shadowBlur = 0;
+      targetCtx.strokeStyle = "#ffffff";
+      targetCtx.lineWidth = 1.8;
+      targetCtx.stroke();
 
-      // White inner dot
-      ctx.beginPath();
-      ctx.arc(0, -12, 4.5, 0, 2 * Math.PI);
-      ctx.fillStyle = "#ffffff";
-      ctx.fill();
+      targetCtx.beginPath();
+      targetCtx.arc(0, -11, 4, 0, 2 * Math.PI);
+      targetCtx.fillStyle = "#ffffff";
+      targetCtx.fill();
 
-      ctx.restore();
+      targetCtx.restore();
 
-      // Google Maps Destination Label Bubble
-      ctx.fillStyle = "#ea4335";
-      ctx.font = "bold 10px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("DESTINATION", gx, pinY - 30);
+      targetCtx.fillStyle = "#ea4335";
+      targetCtx.font = "bold 9px sans-serif";
+      targetCtx.textAlign = "center";
+      targetCtx.fillText("DESTINATION", gx, pinY - 26);
     }
 
-    // 8. Draw Google Maps Navigation GPS Puck (Current Real-Time Agent Position)
+    // 8. Draw Google Maps Navigation GPS Puck
     const ax = toCanvasX(animAgent.x);
     const ay = toCanvasY(animAgent.y);
     const headingRad = (animAgent.heading - 90) * (Math.PI / 180);
 
     // Dynamic Pulsating Light Blue Radar Wave
-    const pulseRadius = 14 + 10 * ((Math.sin(timestamp * 0.005) + 1) / 2);
-    const pulseAlpha = Math.max(0.1, 0.45 - (pulseRadius - 14) / 25);
-    ctx.beginPath();
-    ctx.arc(ax, ay, pulseRadius, 0, 2 * Math.PI);
-    ctx.fillStyle = `rgba(66, 133, 244, ${pulseAlpha})`;
-    ctx.fill();
+    const pulseRadius = 13 + 9 * ((Math.sin(timestamp * 0.005) + 1) / 2);
+    const pulseAlpha = Math.max(0.1, 0.45 - (pulseRadius - 13) / 22);
+    targetCtx.beginPath();
+    targetCtx.arc(ax, ay, pulseRadius, 0, 2 * Math.PI);
+    targetCtx.fillStyle = `rgba(66, 133, 244, ${pulseAlpha})`;
+    targetCtx.fill();
 
     // Directional Navigation Flashlight Cone (60° FOV)
     const fovAngle = Math.PI / 3;
-    const coneLen = 42;
-    ctx.beginPath();
-    ctx.moveTo(ax, ay);
-    ctx.arc(ax, ay, coneLen, headingRad - fovAngle / 2, headingRad + fovAngle / 2);
-    ctx.closePath();
-    const coneGrad = ctx.createRadialGradient(ax, ay, 4, ax, ay, coneLen);
+    const coneLen = 38;
+    targetCtx.beginPath();
+    targetCtx.moveTo(ax, ay);
+    targetCtx.arc(ax, ay, coneLen, headingRad - fovAngle / 2, headingRad + fovAngle / 2);
+    targetCtx.closePath();
+    const coneGrad = targetCtx.createRadialGradient(ax, ay, 4, ax, ay, coneLen);
     coneGrad.addColorStop(0, "rgba(66, 133, 244, 0.65)");
     coneGrad.addColorStop(1, "rgba(66, 133, 244, 0.0)");
-    ctx.fillStyle = coneGrad;
-    ctx.fill();
+    targetCtx.fillStyle = coneGrad;
+    targetCtx.fill();
 
     // Solid Google Maps Blue GPS Puck
-    ctx.beginPath();
-    ctx.arc(ax, ay, 8.5, 0, 2 * Math.PI);
-    ctx.fillStyle = "#1a73e8"; // Google Blue
-    ctx.shadowColor = "#1a73e8";
-    ctx.shadowBlur = 10;
-    ctx.fill();
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
+    targetCtx.beginPath();
+    targetCtx.arc(ax, ay, 7.5, 0, 2 * Math.PI);
+    targetCtx.fillStyle = "#1a73e8";
+    targetCtx.shadowColor = "#1a73e8";
+    targetCtx.shadowBlur = 10;
+    targetCtx.fill();
+    targetCtx.shadowBlur = 0;
+    targetCtx.strokeStyle = "#ffffff";
+    targetCtx.lineWidth = 2.2;
+    targetCtx.stroke();
 
-    ctx.restore();
+    targetCtx.restore();
   }
+
+  // Bind Canvas Click Events
+  setupCanvasClick(elCanvas);
+  setupCanvasClick(elStudioCanvas);
 
   // Event Listeners
   if (elEpisodeSelect) {

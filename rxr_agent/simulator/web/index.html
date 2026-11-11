@@ -121,13 +121,45 @@
       <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800">
         <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
         <span class="text-slate-400">Pace:</span>
-        <span id="top-pace-text" class="font-mono font-bold text-cyan-300">1.2 m/s (Walking)</span>
+        <span id="top-pace-text" class="font-mono font-bold text-cyan-300">1.1 m/s (Walking)</span>
       </div>
       <span id="step-counter" class="font-mono text-cyan-400 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-700">
         Step: 0 / 15
       </span>
     </div>
   </nav>
+
+  <!-- GOOGLE MAPS DESTINATION SEARCH & LOCATION PICKER BAR -->
+  <div class="glass-card p-3.5 flex flex-wrap items-center justify-between gap-3 border-cyan-900/40 bg-slate-900/80">
+    <div class="flex items-center gap-3 flex-1 min-w-[280px]">
+      <!-- Origin -->
+      <div class="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-xs">
+        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-white"></span>
+        <span class="text-slate-400">From:</span>
+        <span id="gmap-search-from" class="font-bold text-white capitalize">Hallway</span>
+      </div>
+
+      <span class="text-slate-500 font-bold">&rarr;</span>
+
+      <!-- Destination Selector -->
+      <div class="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-cyan-800/80 text-xs flex-1 max-w-sm">
+        <span class="text-rose-400 text-sm">📍</span>
+        <span class="text-slate-400">To:</span>
+        <select id="destination-select" onchange="onSelectDestination(this.value)" class="bg-transparent font-bold text-cyan-300 focus:outline-none cursor-pointer flex-1 capitalize">
+          <!-- Populated dynamically with all rooms in the environment -->
+        </select>
+      </div>
+
+      <button id="btn-show-way" onclick="calculateAndShowRoute()" class="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-md shadow-blue-900/50">
+        <span>🗺️ Show Way</span>
+      </button>
+    </div>
+
+    <!-- Quick Location Chips -->
+    <div class="flex items-center gap-1.5 overflow-x-auto py-1 text-xs" id="quick-location-chips">
+      <!-- Populated dynamically with room chips (Kitchen, Balcony, Living, etc.) -->
+    </div>
+  </div>
 
   <!-- ======================================================== -->
   <!-- SECTION 1: ACTION & DECISION STUDIO (Dedicated Execution) -->
@@ -146,7 +178,7 @@
           <span class="text-[11px] text-cyan-400 bg-cyan-950/80 px-2.5 py-0.5 rounded border border-cyan-800/60 font-medium">
             Cross-Modal Word Attention Heatmap
           </span>
-          <span class="text-slate-400">Target: <strong id="target-room" class="text-slate-100">kitchen</strong></span>
+          <span class="text-slate-400">Target: <strong id="target-room" class="text-slate-100 capitalize">kitchen</strong></span>
           <span class="text-slate-400">Landmarks: <strong id="target-lms" class="text-cyan-300">refrigerator</strong></span>
         </div>
       </div>
@@ -159,7 +191,7 @@
     <!-- Viewport & Action Candidates Two-Column Studio -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
 
-      <!-- LEFT: First-Person Heading Viewport (7 Cols) -->
+      <!-- LEFT: First-Person Heading Viewport with Map Toggle (7 Cols) -->
       <div class="lg:col-span-7 flex flex-col gap-3">
         <div class="glass-card p-4 flex flex-col gap-3 flex-1">
           <div class="flex items-center justify-between">
@@ -171,14 +203,19 @@
                 View Heading: 0&deg;
               </span>
             </div>
-            <div class="flex items-center gap-2 text-xs text-slate-400">
-              <span>Node: <strong id="current-node-text" class="text-cyan-300 font-mono">seen1_hallway</strong></span>
-              <span>&bull;</span>
-              <span>Room: <strong id="current-room-text" class="text-white capitalize">hallway</strong></span>
+            
+            <!-- View Mode Switcher: Camera vs Embedded Google Map -->
+            <div class="flex items-center gap-1 bg-slate-900/90 p-0.5 rounded-lg border border-slate-800 text-xs">
+              <button id="view-mode-camera" onclick="switchStudioView('camera')" class="px-2 py-0.5 rounded font-medium bg-cyan-600 text-white transition">
+                📷 Camera View
+              </button>
+              <button id="view-mode-map" onclick="switchStudioView('map')" class="px-2 py-0.5 rounded font-medium text-slate-300 hover:text-white transition">
+                🗺️ Google Map
+              </button>
             </div>
           </div>
 
-          <!-- Panoramic Canvas Stage -->
+          <!-- Panoramic Canvas Stage (Camera View) -->
           <div id="viewport-stage" class="relative w-full h-72 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 rounded-xl border border-slate-800 overflow-hidden flex flex-col items-center justify-center p-4">
             <!-- Horizon & Compass Overlay -->
             <div class="absolute inset-0 opacity-25 pointer-events-none flex flex-col justify-between p-3">
@@ -210,6 +247,14 @@
             <!-- Direction Overlay Buttons -->
             <div id="viewport-action-arrows" class="absolute bottom-3 inset-x-3 flex justify-center gap-2 z-20">
               <!-- Dynamically populated candidate action arrows -->
+            </div>
+          </div>
+
+          <!-- Embedded Google Map Stage (When toggled to Map mode in Action Studio) -->
+          <div id="studio-map-stage" class="hidden relative w-full h-72 bg-[#1b222d] rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center p-2">
+            <canvas id="studio-canvas" width="600" height="280" class="max-w-full h-auto rounded-lg cursor-pointer" title="Click any node to choose destination"></canvas>
+            <div class="absolute top-2 right-2 px-2 py-0.5 rounded bg-black/60 text-[10px] text-cyan-300 border border-slate-700">
+              Click any room node to show route 📍
             </div>
           </div>
 
@@ -246,7 +291,7 @@
           </div>
 
           <p class="text-xs text-slate-400">
-            Green badges show <strong class="text-emerald-400">Recommended Route</strong>; red badges warn against <strong class="text-rose-400">Deviations (Where NOT to go)</strong>:
+            Green badges show <strong class="text-emerald-400">Where to Go</strong> to reach your chosen destination; red badges mark <strong class="text-rose-400">Deviations (Where NOT to go)</strong>:
           </p>
 
           <!-- Candidate Actions List -->
@@ -295,12 +340,12 @@
 
       <div class="flex items-center gap-2.5">
         <button id="btn-step" class="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-cyan-900/40 flex items-center gap-2">
-          <span>Step Forward</span>
+          <span>Walk Next Step</span>
           <span>&rarr;</span>
         </button>
         <button id="btn-play" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-900/40 flex items-center gap-2">
           <span id="play-icon">▶</span>
-          <span id="play-text">Auto Play</span>
+          <span id="play-text">Auto Walk to Destination</span>
         </button>
       </div>
 
@@ -375,18 +420,18 @@
               </span>
               <span class="flex items-center gap-1.5 font-bold text-rose-400">
                 <span class="w-3.5 h-1 border-b-2 border-dashed border-[#ea4335] inline-block"></span>
-                <span>Where NOT to Go (Deviations / Dead Ends ⛔)</span>
+                <span>Where NOT to Go (Deviations ⛔)</span>
               </span>
             </div>
             <div class="flex items-center gap-2 text-[11px] text-slate-400">
               <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#1a73e8] inline-block ring-2 ring-white"></span> You (Puck)</span>
-              <span class="flex items-center gap-1">📍 Destination Pin</span>
+              <span class="flex items-center gap-1">📍 Destination Pin (Click node to change)</span>
             </div>
           </div>
 
           <!-- Canvas Container -->
           <div class="w-full bg-[#1b222d] rounded-2xl border border-slate-800 flex items-center justify-center p-2 relative shadow-inner overflow-hidden">
-            <canvas id="graph-canvas" width="760" height="460" class="max-w-full h-auto rounded-xl"></canvas>
+            <canvas id="graph-canvas" width="760" height="460" class="max-w-full h-auto rounded-xl cursor-pointer" title="Click any node to navigate there"></canvas>
 
             <!-- Floating Pace Speedometer HUD in bottom-left corner of canvas -->
             <div class="absolute bottom-4 left-4 gmap-speed-hud px-3 py-2 flex items-center gap-3 text-xs text-white z-20">
@@ -401,7 +446,7 @@
               </div>
               <div class="h-6 w-[1px] bg-slate-700"></div>
               <div class="text-[11px]">
-                <span class="text-slate-400">Next:</span> <strong id="hud-next-room" class="text-white capitalize">Kitchen</strong>
+                <span class="text-slate-400">Target:</span> <strong id="hud-next-room" class="text-white capitalize">Kitchen</strong>
               </div>
             </div>
 
@@ -420,7 +465,7 @@
           </div>
 
           <div class="flex items-center justify-between text-xs text-slate-400 px-1">
-            <span>Google Maps Theme &bull; Real-time GPS Puck Animation with Smooth Walking Velocity</span>
+            <span class="text-cyan-400 font-medium">💡 Click on any room node on the map to set it as your destination and see the way!</span>
             <span>Blue arrows indicate directional flow &bull; Red crosses mark unrecommended paths</span>
           </div>
         </div>
@@ -644,7 +689,7 @@
               <th class="p-3">Nav Error (NE)</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-slate-800/60 font-mono text-slate-300">
+          <tbody class="divide-y border-slate-800/60 font-mono text-slate-300">
             <tr class="hover:bg-slate-900/40">
               <td class="p-3 font-semibold text-white">English (en)</td>
               <td class="p-3 text-emerald-400">Val-Seen</td>

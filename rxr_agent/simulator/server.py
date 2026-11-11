@@ -166,6 +166,55 @@ class SimulationSession:
         )
         return self.get_simulation_state()
 
+    def set_destination(self, destination_node: str) -> Dict[str, Any]:
+        """Sets a user-selected destination, calculates the shortest path, and updates routing."""
+        if not self.env or not self.current_episode:
+            raise RuntimeError("Simulation not initialized")
+
+        graph = self.env.graph
+        if destination_node not in graph.nodes:
+            raise ValueError(f"Unknown destination node: {destination_node}")
+
+        curr = self.env.current_node
+        queue = [[curr]]
+        visited = {curr}
+        found_path = [curr, destination_node]
+
+        while queue:
+            path = queue.pop(0)
+            node = path[-1]
+            if node == destination_node:
+                found_path = path
+                break
+            for nbr in graph.get_neighbors(node):
+                if nbr not in visited:
+                    visited.add(nbr)
+                    queue.append(path + [nbr])
+
+        dest_vp = graph.nodes.get(destination_node)
+        dest_landmarks = dest_vp.panoramic_views[0].detected_landmarks if dest_vp and dest_vp.panoramic_views else [destination_node]
+        self.current_episode.goal_node = destination_node
+        self.current_episode.target_landmarks = dest_landmarks
+        
+        traversed = list(self.env.trajectory_nodes)
+        if traversed and traversed[-1] == found_path[0]:
+            self.current_episode.reference_path = traversed[:-1] + found_path
+        else:
+            self.current_episode.reference_path = traversed + found_path
+
+        state = self.env.get_state()
+        self.latest_decision = self.policy.evaluate_candidates(
+            state=state,
+            encoded_inst=self.encoded_inst,
+            current_progress=self.current_progress
+        )
+        self.latest_reliability = self.uncertainty_estimator.evaluate(
+            state=state,
+            decision=self.latest_decision,
+            target_landmarks=self.current_episode.target_landmarks
+        )
+        return self.get_simulation_state()
+
     def get_simulation_state(self) -> Dict[str, Any]:
         if not self.env or not self.current_episode:
             return {}
@@ -366,8 +415,16 @@ class SimulatorRequestHandler(http.server.SimpleHTTPRequestHandler):
             self._send_json(res)
 
         elif parsed.path == "/api/step":
-            override_idx = data.get("override_action_index", None)
+            override_idx = data.get("override_action_index", data.get("action_index", None))
             res = GLOBAL_SESSION.step(override_idx)
+            self._send_json(res)
+
+        elif parsed.path == "/api/set_destination":
+            dest = data.get("destination_node")
+            if not dest:
+                self.send_error(400, "destination_node required")
+                return
+            res = GLOBAL_SESSION.set_destination(dest)
             self._send_json(res)
 
         elif parsed.path == "/api/switch_language":
