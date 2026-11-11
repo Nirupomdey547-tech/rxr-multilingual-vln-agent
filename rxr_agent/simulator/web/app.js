@@ -1,4 +1,4 @@
-// RxR VLN Interactive Simulator Client Application with Google Maps Navigation
+// RxR VLN Interactive Simulator Client Application with Google Maps Navigation & Live Lyrics
 (function() {
   let simState = null;
   let isPlaying = false;
@@ -6,6 +6,10 @@
   let currentLanguage = "en";
   let activeTab = "action";
   let studioViewMode = "camera"; // "camera" or "map"
+
+  // AI Voice & Lyrics State
+  let isVoiceEnabled = true;
+  let lastSpokenLyric = "";
 
   // Google Maps & Smooth Motion State
   let animAgent = {
@@ -63,7 +67,6 @@
   // DOM Elements
   const elEpisodeSelect = document.getElementById("episode-select");
   const elSplitBadge = document.getElementById("split-badge");
-  const elInstruction = document.getElementById("instruction-container");
   const elTargetRoom = document.getElementById("target-room");
   const elTargetLms = document.getElementById("target-lms");
   const elStepCounter = document.getElementById("step-counter");
@@ -95,6 +98,13 @@
   const elVpActionArrows = document.getElementById("viewport-action-arrows");
 
   const elCandidatesList = document.getElementById("candidates-list");
+
+  // Synchronized Live Lyrics & AI Voice Elements
+  const elLiveLyricsContainer = document.getElementById("live-lyrics-container");
+  const elAiVoiceEqualizer = document.getElementById("ai-voice-equalizer");
+  const elAiVoiceStatus = document.getElementById("ai-voice-status");
+  const elVoiceIcon = document.getElementById("voice-icon");
+  const elVoiceStatusText = document.getElementById("voice-status-text");
 
   // Destination Search Elements
   const elGmapSearchFrom = document.getElementById("gmap-search-from");
@@ -206,6 +216,133 @@
     }
   };
 
+  // AI Speech Synthesis Narration Engine
+  window.speakNavigationInstruction = function(text, lang) {
+    if (!isVoiceEnabled || !window.speechSynthesis || !text) return;
+    if (text === lastSpokenLyric && window.speechSynthesis.speaking) return;
+
+    window.speechSynthesis.cancel();
+    lastSpokenLyric = text;
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    const langMap = { en: "en-US", hi: "hi-IN", te: "te-IN" };
+    utterance.lang = langMap[lang] || "en-US";
+    utterance.rate = 0.95;
+    utterance.pitch = 1.05;
+
+    const voices = window.speechSynthesis.getVoices();
+    const matchedVoice = voices.find(v => v.lang && v.lang.startsWith(langMap[lang] || "en"));
+    if (matchedVoice) utterance.voice = matchedVoice;
+
+    if (elAiVoiceEqualizer) elAiVoiceEqualizer.classList.remove("hidden");
+    if (elAiVoiceStatus) {
+      elAiVoiceStatus.classList.remove("hidden");
+      elAiVoiceStatus.innerText = "Speaking instruction...";
+    }
+
+    utterance.onend = () => {
+      if (elAiVoiceEqualizer) elAiVoiceEqualizer.classList.add("hidden");
+      if (elAiVoiceStatus) elAiVoiceStatus.classList.add("hidden");
+    };
+
+    utterance.onerror = () => {
+      if (elAiVoiceEqualizer) elAiVoiceEqualizer.classList.add("hidden");
+      if (elAiVoiceStatus) elAiVoiceStatus.classList.add("hidden");
+    };
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  window.toggleVoiceNarration = function() {
+    isVoiceEnabled = !isVoiceEnabled;
+    if (elVoiceIcon) elVoiceIcon.innerText = isVoiceEnabled ? "🔊" : "🔇";
+    if (elVoiceStatusText) elVoiceStatusText.innerText = isVoiceEnabled ? "AI Voice: ON" : "AI Voice: MUTED";
+    if (!isVoiceEnabled && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+      if (elAiVoiceEqualizer) elAiVoiceEqualizer.classList.add("hidden");
+      if (elAiVoiceStatus) elAiVoiceStatus.classList.add("hidden");
+    }
+  };
+
+  // Synchronized Live Lyrics Rendering (Apple Music / Spotify Style)
+  function updateLiveLyrics(state) {
+    if (!elLiveLyricsContainer || !state || !state.episode) return;
+    const sentences = state.episode.sentences && state.episode.sentences.length > 0
+      ? state.episode.sentences
+      : (state.episode.instruction_text ? state.episode.instruction_text.split(/[।\.!\?]\s*/).filter(s => s.trim()) : []);
+
+    if (sentences.length === 0) return;
+
+    const refPath = state.episode.reference_path || [];
+    const currNodeIndex = refPath.indexOf(state.state.current_node);
+
+    // Map current progress along reference trajectory to corresponding sentence
+    let activeIdx = 0;
+    if (state.state.is_terminal || (currNodeIndex === refPath.length - 1 && refPath.length > 0)) {
+      activeIdx = sentences.length - 1;
+    } else if (currNodeIndex > 0 && refPath.length > 1) {
+      activeIdx = Math.min(sentences.length - 1, Math.floor((currNodeIndex / (refPath.length - 1)) * sentences.length));
+    }
+
+    elLiveLyricsContainer.innerHTML = "";
+    sentences.forEach((sent, idx) => {
+      const line = document.createElement("div");
+      const isPast = idx < activeIdx;
+      const isActive = idx === activeIdx;
+
+      line.className = `lyric-line ${isActive ? "active" : (isPast ? "past" : "future")}`;
+
+      const cleanSent = sent.trim();
+      const escapedSent = cleanSent.replace(/'/g, "\\'");
+
+      if (isActive) {
+        line.innerHTML = `
+          <div class="flex items-center gap-2.5 flex-1">
+            <span class="text-cyan-400 font-bold animate-pulse text-base">➔</span>
+            <span class="text-white font-bold leading-relaxed">${cleanSent}</span>
+          </div>
+          <button onclick="speakNavigationInstruction('${escapedSent}', '${currentLanguage}')" class="px-2 py-0.5 rounded text-[11px] bg-cyan-900/60 hover:bg-cyan-800 text-cyan-300 font-semibold transition border border-cyan-700/60 flex items-center gap-1">
+            <span>🔊</span>
+            <span>Hear</span>
+          </button>
+        `;
+      } else if (isPast) {
+        line.innerHTML = `
+          <div class="flex items-center gap-2.5 flex-1">
+            <span class="text-emerald-500 font-bold text-xs">✓</span>
+            <span class="text-slate-500 line-through leading-relaxed">${cleanSent}</span>
+          </div>
+        `;
+      } else {
+        line.innerHTML = `
+          <div class="flex items-center gap-2.5 flex-1">
+            <span class="text-slate-600 font-mono text-[10px]">${idx + 1}</span>
+            <span class="text-slate-400 leading-relaxed">${cleanSent}</span>
+          </div>
+        `;
+      }
+
+      line.onclick = () => {
+        window.speakNavigationInstruction(cleanSent, currentLanguage);
+      };
+
+      elLiveLyricsContainer.appendChild(line);
+
+      // Smooth auto-scroll active lyric into center view
+      if (isActive) {
+        setTimeout(() => {
+          line.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+      }
+    });
+
+    // Auto-speak active instruction if changed and audio enabled
+    const activeText = sentences[activeIdx] ? sentences[activeIdx].trim() : "";
+    if (activeText && activeText !== lastSpokenLyric) {
+      window.speakNavigationInstruction(activeText, currentLanguage);
+    }
+  }
+
   // Choose Destination Handler (Google Maps feature)
   window.onSelectDestination = async function(destNodeId) {
     if (!destNodeId || !simState) return;
@@ -219,7 +356,6 @@
       const data = await res.json();
       updateUI(data);
 
-      // Auto switch to Google Map view to immediately show the calculated way
       if (activeTab === "action" && studioViewMode !== "map") {
         window.switchStudioView("map");
       }
@@ -385,7 +521,6 @@
     const dy = toNode.y - fromNode.y;
     const distMeters = Math.sqrt(dx * dx + dy * dy);
 
-    // Duration based on speed selector (slow walking pace is default)
     const selectedDuration = parseInt(elSpeedSelect.value, 10) || 1600;
     const duration = distMeters > 0 ? selectedDuration : 600;
     const speed = distMeters > 0 ? (distMeters / (duration / 1000)).toFixed(1) : "1.0";
@@ -637,24 +772,12 @@
       elGmapSearchFrom.innerText = state.state.current_room.replace(/_/g, " ");
     }
 
-    // 2. Multilingual Instruction with Word Attention Heatmap
+    // 2. Synchronized Live Navigation Lyrics & Audio
     const goalClean = state.episode.goal_node.replace(/.*_/, "");
     if (elTargetRoom) elTargetRoom.innerText = goalClean;
     if (elTargetLms) elTargetLms.innerText = (state.episode.target_landmarks || []).join(", ");
 
-    if (elInstruction) {
-      if (state.word_attention && state.word_attention.length > 0) {
-        elInstruction.innerHTML = state.word_attention.map(item => {
-          const alpha = Math.min(0.85, Math.max(0.08, item.weight * 3.5));
-          const isHighAttn = item.weight > 0.15;
-          const borderStyle = isHighAttn ? "border: 1px solid rgba(6,182,212,0.8);" : "border: 1px solid transparent;";
-          const textColor = isHighAttn ? "color: #ffffff; font-weight: 600;" : "color: #cbd5e1;";
-          return `<span class="attn-word" style="background-color: rgba(6, 182, 212, ${alpha}); ${borderStyle} ${textColor}" title="Attention: ${(item.weight * 100).toFixed(1)}%">${item.word}</span>`;
-        }).join(" ");
-      } else {
-        elInstruction.innerText = state.episode.instruction_text;
-      }
-    }
+    updateLiveLyrics(state);
 
     if (elOverviewInstructionCopy) {
       elOverviewInstructionCopy.innerText = state.episode.instruction_text;
@@ -778,7 +901,6 @@
         const headingLabel = c.action_type === "STOP" ? "Declare Destination" : `${c.relative_heading >= 0 ? "+" : ""}${c.relative_heading.toFixed(0)}° relative`;
         const actionName = c.action_type === "STOP" ? "🛑 [STOP Action]" : `➡️ Move to ${c.target_room.replace(/_/g, " ")}`;
 
-        // Badge indicating Where to go vs Where NOT to go
         let routeBadge = "";
         if (isRecommended) {
           routeBadge = '<span class="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800 flex items-center gap-1"><span>✅</span> Where to Go</span>';
@@ -1107,7 +1229,6 @@
 
     // 3. Draw "Where to Go" (Recommended Route - Google Maps Vibrant Blue with Moving Chevrons)
     if (refPath.length >= 2) {
-      // Glow casing
       targetCtx.beginPath();
       const startP = nodes[refPath[0]];
       if (startP) {
@@ -1122,17 +1243,15 @@
         targetCtx.lineJoin = "round";
         targetCtx.stroke();
 
-        // Solid Google Blue Route Ribbon
         targetCtx.strokeStyle = "#4285F4";
         targetCtx.lineWidth = W > 600 ? 7 : 5;
         targetCtx.stroke();
 
-        // Inner lighter highlight
         targetCtx.strokeStyle = "#8ab4f8";
         targetCtx.lineWidth = 2;
         targetCtx.stroke();
 
-        // Draw animated streaming chevrons (>>>) along recommended route
+        // Animated streaming chevrons (>>>)
         const phase = (timestamp * 0.04) % 30;
         for (let i = 0; i < refPath.length - 1; i++) {
           const p1 = nodes[refPath[i]];
@@ -1206,7 +1325,6 @@
       const cx = toCanvasX(n.x);
       const cy = toCanvasY(n.y);
 
-      // Node background pill
       targetCtx.beginPath();
       targetCtx.arc(cx, cy, 13, 0, 2 * Math.PI);
       targetCtx.fillStyle = "#1e293b";
@@ -1215,14 +1333,12 @@
       targetCtx.lineWidth = n.id === simState.episode.goal_node ? 3 : 2;
       targetCtx.stroke();
 
-      // Room Icon emoji inside node
       const icon = ROOM_ICONS[n.room_type] || "🏠";
       targetCtx.font = "12px sans-serif";
       targetCtx.textAlign = "center";
       targetCtx.textBaseline = "middle";
       targetCtx.fillText(icon, cx, cy + 1);
 
-      // Room Name Tag below node
       targetCtx.fillStyle = "#e2e8f0";
       targetCtx.font = "bold 10px -apple-system, BlinkMacSystemFont, sans-serif";
       targetCtx.textAlign = "center";
@@ -1240,13 +1356,11 @@
       const bob = Math.sin(timestamp * 0.004) * 4;
       const pinY = gy - 16 + bob;
 
-      // Pin shadow
       targetCtx.beginPath();
       targetCtx.ellipse(gx, gy + 3, 9, 3.5, 0, 0, 2 * Math.PI);
       targetCtx.fillStyle = "rgba(0, 0, 0, 0.45)";
       targetCtx.fill();
 
-      // Google Red Droplet Pin
       targetCtx.save();
       targetCtx.translate(gx, pinY);
 
@@ -1282,7 +1396,6 @@
     const ay = toCanvasY(animAgent.y);
     const headingRad = (animAgent.heading - 90) * (Math.PI / 180);
 
-    // Dynamic Pulsating Light Blue Radar Wave
     const pulseRadius = 13 + 9 * ((Math.sin(timestamp * 0.005) + 1) / 2);
     const pulseAlpha = Math.max(0.1, 0.45 - (pulseRadius - 13) / 22);
     targetCtx.beginPath();
@@ -1290,7 +1403,6 @@
     targetCtx.fillStyle = `rgba(66, 133, 244, ${pulseAlpha})`;
     targetCtx.fill();
 
-    // Directional Navigation Flashlight Cone (60° FOV)
     const fovAngle = Math.PI / 3;
     const coneLen = 38;
     targetCtx.beginPath();
@@ -1303,7 +1415,6 @@
     targetCtx.fillStyle = coneGrad;
     targetCtx.fill();
 
-    // Solid Google Maps Blue GPS Puck
     targetCtx.beginPath();
     targetCtx.arc(ax, ay, 7.5, 0, 2 * Math.PI);
     targetCtx.fillStyle = "#1a73e8";

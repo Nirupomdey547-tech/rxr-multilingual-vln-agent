@@ -78,6 +78,88 @@ body {
   box-shadow: 0 0 16px rgba(14, 165, 233, 0.15);
 }
 
+/* ========================================================= */
+/* LIVE NAVIGATION LYRICS ENGINE (Apple Music / Spotify Style) */
+/* ========================================================= */
+.lyrics-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow-y: auto;
+  max-height: 135px;
+  scroll-behavior: smooth;
+  padding-right: 6px;
+}
+
+.lyric-line {
+  position: relative;
+  padding: 0.45rem 0.85rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.lyric-line.active {
+  color: #38bdf8;
+  font-size: 1.025rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.15) 0%, rgba(14, 165, 233, 0.04) 100%);
+  border-left: 4px solid #38bdf8;
+  box-shadow: 0 4px 14px rgba(56, 189, 248, 0.12);
+  transform: translateX(4px);
+}
+
+.lyric-line.past {
+  color: #64748b;
+  font-size: 0.85rem;
+  opacity: 0.65;
+}
+
+.lyric-line.past:hover {
+  opacity: 0.9;
+}
+
+.lyric-line.future {
+  color: #94a3b8;
+  font-size: 0.875rem;
+  opacity: 0.8;
+}
+
+.lyric-line.future:hover {
+  color: #cbd5e1;
+  opacity: 1;
+}
+
+/* Audio Waveform Animation for AI Voice */
+.audio-equalizer {
+  display: inline-flex;
+  align-items: center;
+  gap: 2.5px;
+  height: 16px;
+}
+
+.audio-bar {
+  width: 3px;
+  height: 100%;
+  background-color: #38bdf8;
+  border-radius: 2px;
+  animation: audio-bounce 1s ease-in-out infinite alternate;
+}
+
+.audio-bar:nth-child(1) { animation-duration: 0.6s; }
+.audio-bar:nth-child(2) { animation-duration: 0.9s; animation-delay: 0.2s; }
+.audio-bar:nth-child(3) { animation-duration: 0.75s; animation-delay: 0.4s; }
+.audio-bar:nth-child(4) { animation-duration: 0.85s; animation-delay: 0.1s; }
+
+@keyframes audio-bounce {
+  0% { height: 20%; }
+  100% { height: 100%; }
+}
+
 /* Google Maps Navigation Bar */
 .gmap-nav-banner {
   background: linear-gradient(135deg, #0b8043 0%, #0f9d58 100%);
@@ -138,27 +220,6 @@ body {
   border: 1px solid rgba(66, 133, 244, 0.35);
   border-radius: 12px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-}
-
-/* Canvas Node Tooltip on Hover */
-.canvas-node-hover {
-  cursor: pointer;
-}
-
-/* Attention word badge */
-.attn-word {
-  display: inline-block;
-  padding: 3px 7px;
-  margin: 2px 3px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-  font-size: 0.95rem;
-  border: 1px solid transparent;
-}
-
-.attn-word:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.15);
 }
 
 /* Status badges */

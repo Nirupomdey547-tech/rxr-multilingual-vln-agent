@@ -165,26 +165,41 @@
   <!-- SECTION 1: ACTION & DECISION STUDIO (Dedicated Execution) -->
   <!-- ======================================================== -->
   <section id="section-action" class="flex flex-col gap-3">
-    <!-- Natural-Language Instruction Banner with Cross-Modal Word Attention -->
+    <!-- Synchronized Live Navigation Lyrics & AI Voice Narration Cockpit -->
     <div class="glass-card p-4 flex flex-col gap-2.5">
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2">
-          <span class="px-2 py-0.5 text-[11px] font-bold uppercase rounded bg-slate-800 text-slate-300 border border-slate-700">
-            Natural-Language Instruction
+        <div class="flex items-center gap-2.5">
+          <div class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-cyan-950/80 border border-cyan-800/80 text-cyan-300 text-xs font-bold">
+            <span>🎵</span>
+            <span>Live Navigation Lyrics</span>
+          </div>
+          <!-- Animated Audio Equalizer when AI voice speaks -->
+          <div id="ai-voice-equalizer" class="audio-equalizer hidden">
+            <span class="audio-bar"></span>
+            <span class="audio-bar"></span>
+            <span class="audio-bar"></span>
+            <span class="audio-bar"></span>
+          </div>
+          <span id="ai-voice-status" class="text-[11px] text-cyan-400 font-medium hidden">
+            Speaking turn instruction...
           </span>
-          <span class="text-xs text-slate-400">Conditioning Vector $I \in \mathbb{R}^{d}$</span>
         </div>
+
         <div class="flex items-center gap-3 text-xs">
-          <span class="text-[11px] text-cyan-400 bg-cyan-950/80 px-2.5 py-0.5 rounded border border-cyan-800/60 font-medium">
-            Cross-Modal Word Attention Heatmap
-          </span>
-          <span class="text-slate-400">Target: <strong id="target-room" class="text-slate-100 capitalize">kitchen</strong></span>
-          <span class="text-slate-400">Landmarks: <strong id="target-lms" class="text-cyan-300">refrigerator</strong></span>
+          <!-- AI Voice Toggle Button -->
+          <button id="btn-toggle-voice" onclick="toggleVoiceNarration()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-800/60 font-medium transition" title="Toggle AI Voice Speech Narration">
+            <span id="voice-icon">🔊</span>
+            <span id="voice-status-text">AI Voice: ON</span>
+          </button>
+          <span class="text-slate-400 hidden sm:inline">Target: <strong id="target-room" class="text-slate-100 capitalize">kitchen</strong></span>
+          <span class="text-slate-400 hidden md:inline">Landmarks: <strong id="target-lms" class="text-cyan-300">refrigerator</strong></span>
         </div>
       </div>
 
-      <div id="instruction-container" class="p-3.5 bg-slate-900/95 rounded-xl border border-slate-800 text-sm leading-relaxed min-h-[70px]">
-        Loading instruction...
+      <!-- Live Lyrics Scrollable Container (Apple Music / Spotify Style) -->
+      <div id="live-lyrics-container" class="lyrics-container p-3 bg-slate-900/90 rounded-xl border border-slate-800/90">
+        <!-- Dynamically rendered synchronized lyrics lines -->
+        <div class="text-xs text-slate-400 p-2">Initializing synchronized navigation lyrics...</div>
       </div>
     </div>
 

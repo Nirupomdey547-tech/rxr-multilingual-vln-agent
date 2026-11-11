@@ -296,6 +296,9 @@ class SimulationSession:
             }
 
         inst = self.current_episode.get_instruction(self.current_language)
+        # Parse sentences for live lyrics view
+        import re
+        raw_sentences = [s.strip() for s in re.split(r'[।\.\!\?]\s*', inst.full_text) if s.strip()]
 
         return {
             "episode": {
@@ -308,6 +311,8 @@ class SimulationSession:
                 "goal_node": self.current_episode.goal_node,
                 "target_landmarks": self.current_episode.target_landmarks,
                 "instruction_text": inst.full_text,
+                "subgoals": inst.subgoal_descriptions,
+                "sentences": raw_sentences,
                 "reference_path": self.current_episode.reference_path
             },
             "state": {
