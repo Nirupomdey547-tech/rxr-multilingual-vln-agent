@@ -14,6 +14,12 @@
   --accent-amber: #f59e0b;
   --accent-rose: #f43f5e;
   --accent-purple: #8b5cf6;
+  --gmap-green: #0f9d58;
+  --gmap-green-dark: #0b8043;
+  --gmap-blue: #4285f4;
+  --gmap-blue-dark: #1a73e8;
+  --gmap-red: #ea4335;
+  --gmap-yellow: #fbbc04;
 }
 
 * {
@@ -70,6 +76,47 @@ body {
   background: rgba(14, 165, 233, 0.12);
   border-color: rgba(56, 189, 248, 0.35);
   box-shadow: 0 0 16px rgba(14, 165, 233, 0.15);
+}
+
+/* Google Maps Navigation Bar */
+.gmap-nav-banner {
+  background: linear-gradient(135deg, #0b8043 0%, #0f9d58 100%);
+  color: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(15, 157, 88, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.gmap-nav-turn-icon {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Google Maps Floating Speedometer HUD */
+.gmap-speed-hud {
+  background: rgba(18, 24, 38, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(66, 133, 244, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* Google Maps Destination Pin Pulse */
+@keyframes pin-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+.pin-bounce {
+  animation: pin-bounce 1.5s ease-in-out infinite;
 }
 
 /* Attention word badge */

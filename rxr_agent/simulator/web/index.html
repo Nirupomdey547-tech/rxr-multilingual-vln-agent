@@ -100,7 +100,7 @@
       </button>
       <button id="tab-floorplan" onclick="switchTab('floorplan')" class="workspace-tab">
         <span class="text-base">🗺️</span>
-        <span>Topological Floorplan</span>
+        <span>Google Maps Navigation</span>
       </button>
       <button id="tab-uncertainty" onclick="switchTab('uncertainty')" class="workspace-tab">
         <span class="text-base">🛡️</span>
@@ -116,10 +116,13 @@
       </button>
     </div>
 
-    <!-- Quick Status Pill & Step Counter -->
+    <!-- Quick Status Pill & Real-Time Walking Pace -->
     <div class="flex items-center gap-3 text-xs pr-1">
-      <span class="text-slate-400 hidden sm:inline">Progress:</span>
-      <span id="progress-percent" class="font-mono font-bold text-cyan-300">0%</span>
+      <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+        <span class="text-slate-400">Pace:</span>
+        <span id="top-pace-text" class="font-mono font-bold text-cyan-300">1.2 m/s (Walking)</span>
+      </div>
       <span id="step-counter" class="font-mono text-cyan-400 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-700">
         Step: 0 / 15
       </span>
@@ -243,7 +246,7 @@
           </div>
 
           <p class="text-xs text-slate-400">
-            The agent scores available topological transitions against visual features and the language goal:
+            Green badges show <strong class="text-emerald-400">Recommended Route</strong>; red badges warn against <strong class="text-rose-400">Deviations (Where NOT to go)</strong>:
           </p>
 
           <!-- Candidate Actions List -->
@@ -303,11 +306,11 @@
 
       <div class="flex items-center gap-3 text-xs">
         <div class="flex items-center gap-1.5 text-slate-400">
-          <span>Playback Speed:</span>
+          <span>Movement Pace:</span>
           <select id="speed-select" class="bg-slate-900 border border-slate-700 text-xs text-white rounded-lg px-2 py-1">
-            <option value="1200">Slow (1.2s)</option>
-            <option value="700" selected>Normal (0.7s)</option>
-            <option value="350">Fast (0.35s)</option>
+            <option value="1600" selected>🚶 Walking Pace (Slow &bull; 1.0 m/s)</option>
+            <option value="900">🚶‍♂️ Normal Pace (1.8 m/s)</option>
+            <option value="450">🏃 Brisk Pace (3.0 m/s)</option>
           </select>
         </div>
       </div>
@@ -315,78 +318,129 @@
   </section>
 
   <!-- ======================================================== -->
-  <!-- SECTION 2: TOPOLOGICAL FLOORPLAN & ROUTE TRACKER -->
+  <!-- SECTION 2: GOOGLE MAPS NAVIGATION & TOPOLOGICAL FLOORPLAN -->
   <!-- ======================================================== -->
   <section id="section-floorplan" class="hidden flex flex-col gap-3">
+    <!-- Google Maps Green Turn-by-Turn Navigation Header Banner -->
+    <div id="gmap-banner" class="gmap-nav-banner p-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div id="gmap-turn-icon" class="gmap-nav-turn-icon">
+          ⬆
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-black/20 text-white/90">
+              Google Maps Turn-by-Turn Guidance
+            </span>
+            <span id="gmap-status-pill" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-white/20 text-white">
+              Fastest Route (94.7% Match)
+            </span>
+          </div>
+          <h2 id="gmap-primary-instruction" class="text-base sm:text-lg font-black tracking-tight text-white mt-0.5">
+            Head north on Hallway corridor toward Kitchen
+          </h2>
+          <p id="gmap-secondary-instruction" class="text-xs text-emerald-100/90 mt-0.5 flex items-center gap-1">
+            <span>Landmark ahead:</span> <strong id="gmap-landmark-prompt" class="underline">refrigerator</strong>
+          </p>
+        </div>
+      </div>
+
+      <!-- Live Navigation Telemetry & ETA HUD -->
+      <div class="flex items-center gap-3 bg-black/20 px-3.5 py-2 rounded-xl border border-white/20 text-xs">
+        <div class="text-right">
+          <div class="text-[10px] text-emerald-200 uppercase font-medium">Remaining to Goal</div>
+          <div id="gmap-eta-dist" class="font-mono font-bold text-white text-sm">6.8 m &bull; 2 steps</div>
+        </div>
+        <div class="h-7 w-[1px] bg-white/20"></div>
+        <div>
+          <div class="text-[10px] text-emerald-200 uppercase font-medium">Walking Speed</div>
+          <div id="gmap-live-speed" class="font-mono font-bold text-emerald-300 text-sm">1.1 m/s</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Map Canvas & Navigation Sidebar -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
 
-      <!-- Large 2D Floorplan Canvas (8 Cols) -->
+      <!-- Google Maps Canvas Stage (8 Cols) -->
       <div class="lg:col-span-8 flex flex-col gap-3">
-        <div class="glass-card p-4 flex flex-col gap-3">
-          <div class="flex items-center justify-between">
-            <div>
-              <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider block">
-                Topological Floorplan $G=(V, E)$ &amp; Route Traversal
+        <div class="glass-card p-4 flex flex-col gap-3 relative overflow-hidden">
+
+          <!-- Google Maps Route Guidance Legend Bar -->
+          <div class="flex flex-wrap items-center justify-between gap-2 text-xs pb-1 border-b border-slate-800">
+            <div class="flex items-center gap-3">
+              <span class="flex items-center gap-1.5 font-bold text-cyan-400">
+                <span class="w-3.5 h-1.5 bg-[#4285F4] inline-block rounded shadow-sm"></span>
+                <span>Where to Go (Recommended Route)</span>
               </span>
-              <span class="text-xs text-slate-400">
-                Bird's-eye spatial topology showing agent trajectory against reference ground-truth
+              <span class="flex items-center gap-1.5 font-bold text-rose-400">
+                <span class="w-3.5 h-1 border-b-2 border-dashed border-[#ea4335] inline-block"></span>
+                <span>Where NOT to Go (Deviations / Dead Ends ⛔)</span>
               </span>
             </div>
-            <div class="flex items-center gap-3 text-xs bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-800">
-              <span class="flex items-center gap-1.5 text-amber-400 font-medium">
-                <span class="w-3 h-0.5 bg-amber-400 inline-block border-dashed"></span>
-                Reference Path
-              </span>
-              <span class="flex items-center gap-1.5 text-cyan-400 font-medium">
-                <span class="w-3 h-1 bg-cyan-400 inline-block rounded"></span>
-                Agent Path
-              </span>
-              <span class="flex items-center gap-1.5 text-emerald-400 font-medium">
-                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span>
-                Goal Node
-              </span>
+            <div class="flex items-center gap-2 text-[11px] text-slate-400">
+              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#1a73e8] inline-block ring-2 ring-white"></span> You (Puck)</span>
+              <span class="flex items-center gap-1">📍 Destination Pin</span>
             </div>
           </div>
 
-          <!-- Dedicated Wide Canvas Container -->
-          <div class="w-full bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-center p-3 overflow-hidden shadow-inner">
+          <!-- Canvas Container -->
+          <div class="w-full bg-[#1b222d] rounded-2xl border border-slate-800 flex items-center justify-center p-2 relative shadow-inner overflow-hidden">
             <canvas id="graph-canvas" width="760" height="460" class="max-w-full h-auto rounded-xl"></canvas>
+
+            <!-- Floating Pace Speedometer HUD in bottom-left corner of canvas -->
+            <div class="absolute bottom-4 left-4 gmap-speed-hud px-3 py-2 flex items-center gap-3 text-xs text-white z-20">
+              <div class="w-8 h-8 rounded-full bg-cyan-600/30 border border-cyan-400/50 flex items-center justify-center text-sm">
+                🚶
+              </div>
+              <div>
+                <div class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Motion Pace</div>
+                <div id="hud-speedometer-val" class="font-mono font-bold text-cyan-300 text-xs">
+                  Walking: 1.1 m/s
+                </div>
+              </div>
+              <div class="h-6 w-[1px] bg-slate-700"></div>
+              <div class="text-[11px]">
+                <span class="text-slate-400">Next:</span> <strong id="hud-next-room" class="text-white capitalize">Kitchen</strong>
+              </div>
+            </div>
+
+            <!-- Floating Google Maps Navigation Controls (Re-center & Zoom) -->
+            <div class="absolute top-4 right-4 flex flex-col gap-2 z-20">
+              <button onclick="recenterMap()" class="w-8 h-8 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white border border-slate-700 flex items-center justify-center shadow-lg transition" title="Re-center on Agent">
+                🎯
+              </button>
+              <button onclick="zoomMap(1.15)" class="w-8 h-8 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white border border-slate-700 flex items-center justify-center shadow-lg transition" title="Zoom In">
+                +
+              </button>
+              <button onclick="zoomMap(0.85)" class="w-8 h-8 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white border border-slate-700 flex items-center justify-center shadow-lg transition" title="Zoom Out">
+                &minus;
+              </button>
+            </div>
           </div>
 
           <div class="flex items-center justify-between text-xs text-slate-400 px-1">
-            <span>Coordinates normalized to Matterport3D metric coordinates $(x, y \text{ in meters})$</span>
-            <span>Cone represents First-Person Field of View (60&deg; FOV)</span>
+            <span>Google Maps Theme &bull; Real-time GPS Puck Animation with Smooth Walking Velocity</span>
+            <span>Blue arrows indicate directional flow &bull; Red crosses mark unrecommended paths</span>
           </div>
         </div>
       </div>
 
-      <!-- Route Traversal Telemetry & History (4 Cols) -->
+      <!-- Route Traversal Telemetry & Turn Step List (4 Cols) -->
       <div class="lg:col-span-4 flex flex-col gap-3">
-        <!-- Route Progression Card -->
-        <div class="glass-card p-4 flex flex-col gap-3">
-          <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-            Route Progression &amp; Tracking
-          </span>
-
-          <div class="flex flex-col gap-1.5">
-            <div class="flex justify-between text-xs">
-              <span class="text-slate-400">Journey Completion:</span>
-              <span id="floorplan-progress-percent" class="font-mono font-bold text-cyan-300">0%</span>
-            </div>
-            <div class="w-full bg-slate-900 rounded-full h-2.5 border border-slate-800 overflow-hidden">
-              <div id="progress-bar-fill" class="progress-fill bg-gradient-to-r from-cyan-500 to-emerald-400 h-full rounded-full" style="width: 0%"></div>
-            </div>
+        <!-- Turn-by-Turn Route Steps -->
+        <div class="glass-card p-4 flex flex-col gap-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+              Navigation Route Itinerary
+            </span>
+            <span id="gmap-total-steps-badge" class="text-[11px] font-mono text-cyan-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+              Optimal: 3 Steps
+            </span>
           </div>
 
-          <div class="grid grid-cols-2 gap-2 text-xs">
-            <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-              <span class="text-slate-400 block text-[11px]">Traversed Distance:</span>
-              <span id="floorplan-dist-text" class="text-sm font-semibold text-white font-mono">0.0 m</span>
-            </div>
-            <div class="bg-slate-900/80 p-2.5 rounded-xl border border-slate-800">
-              <span class="text-slate-400 block text-[11px]">Distance to Goal:</span>
-              <span id="floorplan-goal-dist" class="text-sm font-semibold text-cyan-300 font-mono">7.5 m</span>
-            </div>
+          <div id="gmap-route-steps-container" class="flex flex-col gap-2 overflow-y-auto max-h-56 pr-1 text-xs">
+            <!-- Dynamically populated turn steps with Checkmarks / Active status -->
           </div>
         </div>
 
@@ -401,22 +455,22 @@
             </span>
           </div>
 
-          <div id="floorplan-history-list" class="flex flex-col gap-1.5 overflow-y-auto max-h-60 pr-1 text-xs">
+          <div id="floorplan-history-list" class="flex flex-col gap-1.5 overflow-y-auto max-h-48 pr-1 text-xs">
             <!-- Traversed nodes dynamically appended -->
           </div>
         </div>
 
         <!-- Quick Controls in Floorplan -->
         <div class="glass-card p-3 flex items-center justify-between gap-2">
-          <button onclick="document.getElementById('btn-step').click()" class="flex-1 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
-            <span>Step</span>
+          <button onclick="document.getElementById('btn-step').click()" class="flex-1 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-md shadow-cyan-950/50">
+            <span>Walk Next Step</span>
             <span>&rarr;</span>
           </button>
-          <button onclick="document.getElementById('btn-play').click()" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1">
-            <span>Auto Play</span>
+          <button onclick="document.getElementById('btn-play').click()" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-md shadow-emerald-950/50">
+            <span>Auto Walk</span>
           </button>
           <button onclick="document.getElementById('btn-backtrack').click()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition">
-            ↩ Backtrack
+            ↩ Revert
           </button>
         </div>
       </div>
