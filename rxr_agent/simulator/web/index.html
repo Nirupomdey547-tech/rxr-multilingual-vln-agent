@@ -4,6 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RxR Multilingual VLN Decision Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -16,71 +19,109 @@
     })();
   </script>
 </head>
-<body class="bg-[#0a0e17] text-slate-100 min-h-screen p-4 flex flex-col gap-3">
+<body class="bg-[#070a12] text-slate-100 min-h-screen p-3 sm:p-5 flex flex-col gap-4">
 
-  <!-- TOP HEADER & GLOBAL CONTROLS -->
-  <header class="glass-card p-4 flex flex-wrap items-center justify-between gap-4">
+  <!-- UNIFIED MINIMALIST TOP HEADER & GLOBAL NAVIGATION -->
+  <header class="glass-card px-4 py-3 flex flex-wrap items-center justify-between gap-3 border-white/5">
+    
+    <!-- Brand / Identity -->
     <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-cyan-950/80 border border-cyan-700/60 flex items-center justify-center text-xl shadow-lg shadow-cyan-950/50">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center text-xl shadow-lg shadow-cyan-950/40">
         🧭
       </div>
       <div>
-        <div class="flex items-center gap-2.5">
-          <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
-            Google RxR Benchmark
+        <div class="flex items-center gap-2">
+          <h1 class="text-sm sm:text-base font-bold tracking-tight text-white">
+            RxR Multilingual VLN
+          </h1>
+          <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 hidden sm:inline">
+            Decision Agent
           </span>
-          <span id="split-badge" class="px-2 py-0.5 text-[10px] font-semibold rounded bg-emerald-950 text-emerald-400 border border-emerald-800">
+          <span id="split-badge" class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
             Val-Seen
           </span>
           <span id="reliability-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-full badge-reliable">
             RELIABLE
           </span>
         </div>
-        <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2 mt-0.5">
-          <span>Multilingual Vision-and-Language Navigation Decision Agent</span>
-        </h1>
+        <p class="text-[11px] text-slate-400 mt-0.5 hidden md:block">
+          Google Room-Across-Room Benchmark &bull; Cross-Modal Policy
+        </p>
       </div>
     </div>
 
-    <!-- Episode & Language Selectors -->
-    <div class="flex flex-wrap items-center gap-3">
+    <!-- Center: Dedicated Section Switcher Tabs -->
+    <nav class="flex items-center gap-1 bg-slate-900/60 p-1 rounded-xl border border-white/5 overflow-x-auto">
+      <button id="tab-action" onclick="switchTab('action')" class="workspace-tab active">
+        <span>🎯</span>
+        <span>Action Studio</span>
+      </button>
+      <button id="tab-floorplan" onclick="switchTab('floorplan')" class="workspace-tab">
+        <span>🗺️</span>
+        <span>Google Maps</span>
+      </button>
+      <button id="tab-uncertainty" onclick="switchTab('uncertainty')" class="workspace-tab">
+        <span>🛡️</span>
+        <span>Safety &amp; Risk</span>
+      </button>
+      <button id="tab-benchmark" onclick="switchTab('benchmark')" class="workspace-tab">
+        <span>📊</span>
+        <span>Analytics</span>
+      </button>
+      <button id="tab-overview" onclick="switchTab('overview')" class="workspace-tab">
+        <span>📑</span>
+        <span>Overview</span>
+      </button>
+    </nav>
+
+    <!-- Right Controls: Episode, Language, Pace & User -->
+    <div class="flex items-center gap-2.5 flex-wrap">
+      
       <!-- Episode Selector -->
-      <div class="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-xl border border-slate-700/80">
-        <label for="episode-select" class="text-xs text-slate-400 font-medium">Episode:</label>
+      <div class="flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-1.5 rounded-xl border border-white/5">
+        <label for="episode-select" class="text-[11px] text-slate-400 font-medium">Ep:</label>
         <select id="episode-select" class="bg-transparent text-xs font-semibold text-cyan-300 focus:outline-none cursor-pointer">
-          <option value="rxr_seen1_ep01" class="bg-slate-900 text-white">Seen House 01: Kitchen (Duplex)</option>
-          <option value="rxr_seen1_ep02" class="bg-slate-900 text-white">Seen House 01: Balcony</option>
-          <option value="rxr_seen1_ep03" class="bg-slate-900 text-white">Seen House 01: Master Bath</option>
-          <option value="rxr_seen2_ep01" class="bg-slate-900 text-white">Seen House 02: Tea Lounge (Villa)</option>
-          <option value="rxr_unseen1_ep01" class="bg-slate-900 text-white">Unseen House 01: Terrace (Apartment)</option>
-          <option value="rxr_unseen1_ep02" class="bg-slate-900 text-white">Unseen House 01: Home Office</option>
-          <option value="rxr_unseen2_ep01" class="bg-slate-900 text-white">Unseen House 02: Roof Deck (Penthouse)</option>
+          <option value="rxr_seen1_ep01" class="bg-slate-900 text-white">Seen 01: Kitchen (Duplex)</option>
+          <option value="rxr_seen1_ep02" class="bg-slate-900 text-white">Seen 01: Balcony</option>
+          <option value="rxr_seen1_ep03" class="bg-slate-900 text-white">Seen 01: Master Bath</option>
+          <option value="rxr_seen2_ep01" class="bg-slate-900 text-white">Seen 02: Tea Lounge (Villa)</option>
+          <option value="rxr_unseen1_ep01" class="bg-slate-900 text-white">Unseen 01: Terrace (Apartment)</option>
+          <option value="rxr_unseen1_ep02" class="bg-slate-900 text-white">Unseen 01: Home Office</option>
+          <option value="rxr_unseen2_ep01" class="bg-slate-900 text-white">Unseen 02: Roof Deck (Penthouse)</option>
         </select>
       </div>
 
       <!-- Language Selector -->
-      <div class="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-700/80 text-xs">
-        <button id="lang-en" class="lang-btn px-2.5 py-1 rounded-lg font-medium bg-cyan-600 text-white transition shadow-sm">
-          English
+      <div class="flex items-center bg-slate-900/80 p-0.5 rounded-xl border border-white/5 text-xs">
+        <button id="lang-en" class="lang-btn px-2.5 py-1 rounded-lg font-medium bg-cyan-600 text-white shadow-sm">
+          EN
         </button>
-        <button id="lang-hi" class="lang-btn px-2.5 py-1 rounded-lg font-medium text-slate-300 hover:text-white transition">
-          हिंदी (Hindi)
+        <button id="lang-hi" class="lang-btn px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white">
+          हिंदी
         </button>
-        <button id="lang-te" class="lang-btn px-2.5 py-1 rounded-lg font-medium text-slate-300 hover:text-white transition">
-          తెలుగు (Telugu)
+        <button id="lang-te" class="lang-btn px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white">
+          తెలుగు
         </button>
       </div>
 
+      <!-- Pace & Step Live Indicator -->
+      <div class="hidden xl:flex items-center gap-2 bg-slate-900/80 px-2.5 py-1.5 rounded-xl border border-white/5 text-xs">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+        <span id="top-pace-text" class="font-mono text-cyan-300 font-semibold">1.1 m/s</span>
+        <span class="text-slate-600">&bull;</span>
+        <span id="step-counter" class="font-mono text-slate-300">Step: 0 / 15</span>
+      </div>
+
       <!-- User Profile & Sign Out -->
-      <div class="flex items-center gap-2 pl-2 border-l border-slate-800">
-        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+      <div class="flex items-center gap-1.5 pl-1.5 border-l border-slate-800">
+        <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900/80 border border-white/5 text-xs">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
           <span id="user-display-name" class="font-medium text-slate-200">Researcher</span>
         </div>
         <button 
           id="btn-logout" 
           onclick="logout()" 
-          class="p-1.5 rounded-lg bg-slate-900 hover:bg-rose-950/60 hover:text-rose-300 hover:border-rose-800 text-slate-400 border border-slate-800 transition flex items-center justify-center group" 
+          class="p-1.5 rounded-xl bg-slate-900/80 hover:bg-rose-950/60 hover:text-rose-300 text-slate-400 border border-white/5 transition flex items-center justify-center group" 
           title="Sign Out"
         >
           <svg class="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,91 +129,24 @@
           </svg>
         </button>
       </div>
+
     </div>
   </header>
 
-  <!-- DEDICATED ACTION WORKSPACES NAVIGATION BAR -->
-  <nav class="glass-card px-3 py-2 flex flex-wrap items-center justify-between gap-2 border-slate-800/80">
-    <div class="flex items-center gap-1.5 overflow-x-auto py-0.5">
-      <button id="tab-action" onclick="switchTab('action')" class="workspace-tab active">
-        <span class="text-base">🎯</span>
-        <span>Action Studio</span>
-      </button>
-      <button id="tab-floorplan" onclick="switchTab('floorplan')" class="workspace-tab">
-        <span class="text-base">🗺️</span>
-        <span>Google Maps Navigation</span>
-      </button>
-      <button id="tab-uncertainty" onclick="switchTab('uncertainty')" class="workspace-tab">
-        <span class="text-base">🛡️</span>
-        <span>Uncertainty &amp; Safety</span>
-      </button>
-      <button id="tab-benchmark" onclick="switchTab('benchmark')" class="workspace-tab">
-        <span class="text-base">📊</span>
-        <span>Benchmark Analytics</span>
-      </button>
-      <button id="tab-overview" onclick="switchTab('overview')" class="workspace-tab">
-        <span class="text-base">📑</span>
-        <span>Structured Overview</span>
-      </button>
-    </div>
-
-    <!-- Quick Status Pill & Real-Time Walking Pace -->
-    <div class="flex items-center gap-3 text-xs pr-1">
-      <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800">
-        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
-        <span class="text-slate-400">Pace:</span>
-        <span id="top-pace-text" class="font-mono font-bold text-cyan-300">1.1 m/s (Walking)</span>
-      </div>
-      <span id="step-counter" class="font-mono text-cyan-400 bg-slate-900/90 px-2.5 py-1 rounded-lg border border-slate-700">
-        Step: 0 / 15
-      </span>
-    </div>
-  </nav>
-
-  <!-- GOOGLE MAPS DESTINATION SEARCH & LOCATION PICKER BAR -->
-  <div class="glass-card p-3.5 flex flex-wrap items-center justify-between gap-3 border-cyan-900/40 bg-slate-900/80">
-    <div class="flex items-center gap-3 flex-1 min-w-[280px]">
-      <!-- Origin -->
-      <div class="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 text-xs">
-        <span class="w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-white"></span>
-        <span class="text-slate-400">From:</span>
-        <span id="gmap-search-from" class="font-bold text-white capitalize">Hallway</span>
-      </div>
-
-      <span class="text-slate-500 font-bold">&rarr;</span>
-
-      <!-- Destination Selector -->
-      <div class="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-cyan-800/80 text-xs flex-1 max-w-sm">
-        <span class="text-rose-400 text-sm">📍</span>
-        <span class="text-slate-400">To:</span>
-        <select id="destination-select" onchange="onSelectDestination(this.value)" class="bg-transparent font-bold text-cyan-300 focus:outline-none cursor-pointer flex-1 capitalize">
-          <!-- Populated dynamically with all rooms in the environment -->
-        </select>
-      </div>
-
-      <button id="btn-show-way" onclick="calculateAndShowRoute()" class="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-md shadow-blue-900/50">
-        <span>🗺️ Show Way</span>
-      </button>
-    </div>
-
-    <!-- Quick Location Chips -->
-    <div class="flex items-center gap-1.5 overflow-x-auto py-1 text-xs" id="quick-location-chips">
-      <!-- Populated dynamically with room chips (Kitchen, Balcony, Living, etc.) -->
-    </div>
-  </div>
-
   <!-- ======================================================== -->
-  <!-- SECTION 1: ACTION & DECISION STUDIO (Dedicated Execution) -->
+  <!-- SECTION 1: ACTION & DECISION STUDIO (Spacious & Clean) -->
   <!-- ======================================================== -->
-  <section id="section-action" class="flex flex-col gap-3">
-    <!-- Synchronized Live Navigation Lyrics & AI Voice Narration Cockpit -->
-    <div class="glass-card p-4 flex flex-col gap-2.5">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
-          <div class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-cyan-950/80 border border-cyan-800/80 text-cyan-300 text-xs font-bold">
+  <main id="section-action" class="flex flex-col gap-4">
+
+    <!-- Synchronized Live Navigation Lyrics & AI Voice Narration Card -->
+    <div class="glass-card p-4 sm:p-5 flex flex-col gap-3">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 px-3 py-1 rounded-xl bg-cyan-950/60 border border-cyan-800/50 text-cyan-300 text-xs font-semibold">
             <span>🎵</span>
             <span>Live Navigation Lyrics</span>
           </div>
+
           <!-- Animated Audio Equalizer when AI voice speaks -->
           <div id="ai-voice-equalizer" class="audio-equalizer hidden">
             <span class="audio-bar"></span>
@@ -180,113 +154,112 @@
             <span class="audio-bar"></span>
             <span class="audio-bar"></span>
           </div>
-          <span id="ai-voice-status" class="text-[11px] text-cyan-400 font-medium hidden">
+          <span id="ai-voice-status" class="text-xs text-cyan-400 font-medium hidden">
             Speaking turn instruction...
           </span>
         </div>
 
         <div class="flex items-center gap-3 text-xs">
           <!-- AI Voice Toggle Button -->
-          <button id="btn-toggle-voice" onclick="toggleVoiceNarration()" class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-800/60 font-medium transition" title="Toggle AI Voice Speech Narration">
+          <button id="btn-toggle-voice" onclick="toggleVoiceNarration()" class="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-emerald-400 border border-emerald-800/50 font-semibold transition" title="Toggle AI Voice Speech Narration">
             <span id="voice-icon">🔊</span>
             <span id="voice-status-text">AI Voice: ON</span>
           </button>
-          <span class="text-slate-400 hidden sm:inline">Target: <strong id="target-room" class="text-slate-100 capitalize">kitchen</strong></span>
-          <span class="text-slate-400 hidden md:inline">Landmarks: <strong id="target-lms" class="text-cyan-300">refrigerator</strong></span>
+          <span class="text-slate-400 hidden sm:inline">Target: <strong id="target-room" class="text-slate-200 capitalize font-semibold">kitchen</strong></span>
+          <span class="text-slate-400 hidden md:inline">Landmarks: <strong id="target-lms" class="text-cyan-300 font-semibold">refrigerator</strong></span>
         </div>
       </div>
 
       <!-- Live Lyrics Scrollable Container (Apple Music / Spotify Style) -->
-      <div id="live-lyrics-container" class="lyrics-container p-3 bg-slate-900/90 rounded-xl border border-slate-800/90">
-        <!-- Dynamically rendered synchronized lyrics lines -->
-        <div class="text-xs text-slate-400 p-2">Initializing synchronized navigation lyrics...</div>
+      <div id="live-lyrics-container" class="lyrics-container p-3 sm:p-4 bg-slate-950/60 rounded-xl border border-white/5">
+        <div class="text-xs text-slate-500 p-2">Initializing synchronized navigation lyrics...</div>
       </div>
     </div>
 
     <!-- Viewport & Action Candidates Two-Column Studio -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
       <!-- LEFT: First-Person Heading Viewport with Map Toggle (7 Cols) -->
-      <div class="lg:col-span-7 flex flex-col gap-3">
-        <div class="glass-card p-4 flex flex-col gap-3 flex-1">
+      <div class="lg:col-span-7 flex flex-col gap-4">
+        <div class="glass-card p-4 sm:p-5 flex flex-col gap-4 flex-1">
           <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2">
-              <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            <div class="flex items-center gap-2.5">
+              <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
                 First-Person Heading Viewport
               </span>
-              <span id="viewport-heading-tag" class="text-xs font-mono text-cyan-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+              <span id="viewport-heading-tag" class="text-xs font-mono text-cyan-400 bg-slate-900/90 px-2.5 py-0.5 rounded-lg border border-white/5">
                 View Heading: 0&deg;
               </span>
             </div>
             
             <!-- View Mode Switcher: Camera vs Embedded Google Map -->
-            <div class="flex items-center gap-1 bg-slate-900/90 p-0.5 rounded-lg border border-slate-800 text-xs">
-              <button id="view-mode-camera" onclick="switchStudioView('camera')" class="px-2 py-0.5 rounded font-medium bg-cyan-600 text-white transition">
+            <div class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-white/5 text-xs">
+              <button id="view-mode-camera" onclick="switchStudioView('camera')" class="px-2.5 py-1 rounded-lg font-semibold bg-cyan-600 text-white transition">
                 📷 Camera View
               </button>
-              <button id="view-mode-map" onclick="switchStudioView('map')" class="px-2 py-0.5 rounded font-medium text-slate-300 hover:text-white transition">
+              <button id="view-mode-map" onclick="switchStudioView('map')" class="px-2.5 py-1 rounded-lg font-semibold text-slate-400 hover:text-white transition">
                 🗺️ Google Map
               </button>
             </div>
           </div>
 
           <!-- Panoramic Canvas Stage (Camera View) -->
-          <div id="viewport-stage" class="relative w-full h-72 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 rounded-xl border border-slate-800 overflow-hidden flex flex-col items-center justify-center p-4">
+          <div id="viewport-stage" class="relative w-full h-80 bg-gradient-to-b from-slate-950 via-[#0d1424] to-slate-950 rounded-2xl border border-white/5 overflow-hidden flex flex-col items-center justify-center p-6 shadow-inner">
             <!-- Horizon & Compass Overlay -->
-            <div class="absolute inset-0 opacity-25 pointer-events-none flex flex-col justify-between p-3">
-              <div class="flex justify-between text-[11px] text-slate-400 font-mono">
+            <div class="absolute inset-0 opacity-20 pointer-events-none flex flex-col justify-between p-4">
+              <div class="flex justify-between text-xs text-slate-400 font-mono">
                 <span>W (270&deg;)</span>
                 <span>NW (315&deg;)</span>
                 <span>N (0&deg;)</span>
                 <span>NE (45&deg;)</span>
                 <span>E (90&deg;)</span>
               </div>
-              <div class="w-full border-b border-dashed border-cyan-700/50"></div>
-              <div class="flex justify-between text-[10px] text-slate-500 font-mono">
+              <div class="w-full border-b border-dashed border-cyan-500/40"></div>
+              <div class="flex justify-between text-[11px] text-slate-500 font-mono">
                 <span>Ground Plane Perspective</span>
                 <span>Panoramic Heading Sensor</span>
               </div>
             </div>
 
             <!-- Horizon Room Illustration -->
-            <div class="relative z-10 flex flex-col items-center text-center gap-1.5">
-              <div id="room-icon-container" class="w-16 h-16 rounded-2xl bg-cyan-950/70 border border-cyan-700/60 flex items-center justify-center text-3xl shadow-lg shadow-cyan-950/50">
+            <div class="relative z-10 flex flex-col items-center text-center gap-2">
+              <div id="room-icon-container" class="w-20 h-20 rounded-2xl bg-cyan-950/60 border border-cyan-500/30 flex items-center justify-center text-4xl shadow-xl shadow-cyan-950/60">
                 🏠
               </div>
-              <h3 id="vp-room-name" class="text-lg font-bold text-white capitalize">Hallway</h3>
-              <p id="vp-description" class="text-xs text-slate-300 max-w-md px-2 italic">
+              <h3 id="vp-room-name" class="text-xl font-bold text-white capitalize tracking-tight">Hallway</h3>
+              <p id="vp-description" class="text-xs text-slate-300 max-w-md px-4 leading-relaxed">
                 Ahead is the open hallway leading deeper into the house
               </p>
             </div>
 
             <!-- Direction Overlay Buttons -->
-            <div id="viewport-action-arrows" class="absolute bottom-3 inset-x-3 flex justify-center gap-2 z-20">
+            <div id="viewport-action-arrows" class="absolute bottom-4 inset-x-4 flex justify-center gap-2 z-20">
               <!-- Dynamically populated candidate action arrows -->
             </div>
           </div>
 
           <!-- Embedded Google Map Stage (When toggled to Map mode in Action Studio) -->
-          <div id="studio-map-stage" class="hidden relative w-full h-72 bg-[#1b222d] rounded-xl border border-slate-800 overflow-hidden flex items-center justify-center p-2">
-            <canvas id="studio-canvas" width="600" height="280" class="max-w-full h-auto rounded-lg cursor-pointer" title="Click any node to choose destination"></canvas>
-            <div class="absolute top-2 right-2 px-2 py-0.5 rounded bg-black/60 text-[10px] text-cyan-300 border border-slate-700">
-              Click any room node to show route 📍
+          <div id="studio-map-stage" class="hidden relative w-full h-80 bg-[#101726] rounded-2xl border border-white/5 overflow-hidden flex items-center justify-center p-3 shadow-inner">
+            <canvas id="studio-canvas" width="600" height="300" class="max-w-full h-auto rounded-xl cursor-pointer" title="Click any node to choose destination"></canvas>
+            <div class="absolute top-3 right-3 px-2.5 py-1 rounded-xl bg-black/70 backdrop-blur-md text-xs text-cyan-300 border border-white/10 font-medium">
+              Click any room node to route 📍
             </div>
           </div>
 
           <!-- Perception Metadata: Heading, Distance & Landmarks -->
-          <div class="grid grid-cols-3 gap-2 text-xs">
-            <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-              <span class="text-slate-400 block text-[11px]">Heading Orientation:</span>
-              <span id="heading-text" class="text-sm font-semibold text-white">0.0&deg; (North)</span>
+          <div class="grid grid-cols-3 gap-3 text-xs">
+            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5">
+              <span class="text-slate-400 block text-[11px] font-medium">Heading Orientation</span>
+              <span id="heading-text" class="text-sm font-semibold text-white mt-0.5 block">0.0&deg; (North)</span>
             </div>
-            <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-              <span class="text-slate-400 block text-[11px]">Distance Traversed:</span>
-              <span id="distance-text" class="text-sm font-semibold text-cyan-300">0.0 m</span>
+            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5">
+              <span class="text-slate-400 block text-[11px] font-medium">Distance Traversed</span>
+              <span id="distance-text" class="text-sm font-semibold text-cyan-300 font-mono mt-0.5 block">0.0 m</span>
             </div>
-            <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
-              <span class="text-slate-400 block text-[11px]">Visual Landmarks:</span>
-              <div id="detected-landmarks" class="flex flex-wrap gap-1 mt-0.5">
-                <span class="text-[11px] bg-cyan-900/40 text-cyan-300 px-1.5 py-0.5 rounded border border-cyan-700/50">door</span>
+            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5">
+              <span class="text-slate-400 block text-[11px] font-medium">Visual Landmarks</span>
+              <div id="detected-landmarks" class="flex flex-wrap gap-1 mt-1">
+                <span class="text-[11px] bg-cyan-950/60 text-cyan-300 px-2 py-0.5 rounded-lg border border-cyan-800/50">door</span>
               </div>
             </div>
           </div>
@@ -294,44 +267,44 @@
       </div>
 
       <!-- RIGHT: Instruction-Conditioned Action Candidates (5 Cols) -->
-      <div class="lg:col-span-5 flex flex-col gap-3">
-        <div class="glass-card p-4 flex flex-col gap-3 flex-1">
+      <div class="lg:col-span-5 flex flex-col gap-4">
+        <div class="glass-card p-4 sm:p-5 flex flex-col gap-3.5 flex-1">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
               Action Policy Distribution $\pi(a_t \mid s_t, I)$
             </span>
-            <span class="text-[11px] text-cyan-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-              Manual Override Enabled
+            <span class="text-[11px] font-medium text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded-lg border border-cyan-800/40">
+              Interactive
             </span>
           </div>
 
-          <p class="text-xs text-slate-400">
-            Green badges show <strong class="text-emerald-400">Where to Go</strong> to reach your chosen destination; red badges mark <strong class="text-rose-400">Deviations (Where NOT to go)</strong>:
+          <p class="text-xs text-slate-400 leading-relaxed">
+            Green badges indicate the <strong class="text-emerald-400">optimal next step</strong> to destination; red badges mark <strong class="text-rose-400">path deviations ⛔</strong>:
           </p>
 
           <!-- Candidate Actions List -->
-          <div id="candidates-list" class="flex flex-col gap-2 overflow-y-auto max-h-72 pr-1">
+          <div id="candidates-list" class="flex flex-col gap-2.5 overflow-y-auto max-h-80 pr-1">
             <!-- Dynamically populated candidate action bars -->
           </div>
 
           <!-- Decision Stats (Entropy & Confidence in Studio) -->
-          <div class="mt-auto pt-2 border-t border-slate-800/80 grid grid-cols-2 gap-2 text-xs">
-            <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
-              <div class="flex justify-between items-center text-[11px] mb-1">
-                <span class="text-slate-400">Policy Entropy:</span>
-                <span id="studio-entropy-value" class="font-mono text-cyan-300">0.32</span>
+          <div class="mt-auto pt-3 border-t border-white/5 grid grid-cols-2 gap-3 text-xs">
+            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5">
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="text-slate-400 font-medium">Policy Entropy:</span>
+                <span id="studio-entropy-value" class="font-mono text-cyan-300 font-bold">0.32</span>
               </div>
               <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
-                <div id="studio-entropy-bar" class="bg-cyan-500 h-full rounded-full" style="width: 25%"></div>
+                <div id="studio-entropy-bar" class="bg-cyan-500 h-full rounded-full transition-all duration-300" style="width: 25%"></div>
               </div>
             </div>
-            <div class="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
-              <div class="flex justify-between items-center text-[11px] mb-1">
-                <span class="text-slate-400">Top Confidence:</span>
-                <span id="studio-conf-value" class="font-mono text-emerald-400">84.2%</span>
+            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5">
+              <div class="flex justify-between items-center text-xs mb-1.5">
+                <span class="text-slate-400 font-medium">Top Confidence:</span>
+                <span id="studio-conf-value" class="font-mono text-emerald-400 font-bold">84.2%</span>
               </div>
               <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
-                <div id="studio-conf-bar" class="bg-emerald-500 h-full rounded-full" style="width: 84%"></div>
+                <div id="studio-conf-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width: 84%"></div>
               </div>
             </div>
           </div>
@@ -341,94 +314,125 @@
     </div>
 
     <!-- Execution Cockpit Toolbar -->
-    <div class="glass-card p-3.5 flex flex-wrap items-center justify-between gap-3">
+    <div class="glass-card p-4 flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center gap-2">
-        <button id="btn-reset" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition border border-slate-700 flex items-center gap-1.5">
+        <button id="btn-reset" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-semibold transition border border-white/10 flex items-center gap-2">
           <span>↺</span>
           <span>Reset</span>
         </button>
-        <button id="btn-backtrack" class="px-3.5 py-2 bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 rounded-xl text-xs font-semibold transition border border-amber-800/60 flex items-center gap-1.5">
+        <button id="btn-backtrack" class="px-4 py-2.5 bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 rounded-xl text-xs font-semibold transition border border-amber-800/50 flex items-center gap-2">
           <span>↩</span>
           <span>Backtrack</span>
         </button>
       </div>
 
-      <div class="flex items-center gap-2.5">
-        <button id="btn-step" class="px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-cyan-900/40 flex items-center gap-2">
+      <div class="flex items-center gap-3">
+        <button id="btn-step" class="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-cyan-900/40 flex items-center gap-2">
           <span>Walk Next Step</span>
           <span>&rarr;</span>
         </button>
-        <button id="btn-play" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-900/40 flex items-center gap-2">
+        <button id="btn-play" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-900/40 flex items-center gap-2">
           <span id="play-icon">▶</span>
           <span id="play-text">Auto Walk to Destination</span>
         </button>
       </div>
 
-      <div class="flex items-center gap-3 text-xs">
-        <div class="flex items-center gap-1.5 text-slate-400">
-          <span>Movement Pace:</span>
-          <select id="speed-select" class="bg-slate-900 border border-slate-700 text-xs text-white rounded-lg px-2 py-1">
-            <option value="1600" selected>🚶 Walking Pace (Slow &bull; 1.0 m/s)</option>
-            <option value="900">🚶‍♂️ Normal Pace (1.8 m/s)</option>
-            <option value="450">🏃 Brisk Pace (3.0 m/s)</option>
-          </select>
-        </div>
+      <div class="flex items-center gap-2 text-xs">
+        <span class="text-slate-400 font-medium">Movement Pace:</span>
+        <select id="speed-select" class="bg-slate-900/90 border border-white/10 text-xs text-white rounded-xl px-3 py-2 font-medium focus:outline-none">
+          <option value="1600" selected>🚶 Walking Pace (Slow &bull; 1.0 m/s)</option>
+          <option value="900">🚶‍♂️ Normal Pace (1.8 m/s)</option>
+          <option value="450">🏃 Brisk Pace (3.0 m/s)</option>
+        </select>
       </div>
     </div>
-  </section>
+  </main>
 
   <!-- ======================================================== -->
   <!-- SECTION 2: GOOGLE MAPS NAVIGATION & TOPOLOGICAL FLOORPLAN -->
   <!-- ======================================================== -->
-  <section id="section-floorplan" class="hidden flex flex-col gap-3">
+  <section id="section-floorplan" class="hidden flex flex-col gap-4">
+
+    <!-- GOOGLE MAPS DESTINATION SEARCH & LOCATION PICKER BAR -->
+    <div class="glass-card p-4 flex flex-wrap items-center justify-between gap-3 border-cyan-900/40 bg-slate-900/70">
+      <div class="flex items-center gap-3 flex-1 min-w-[280px]">
+        <!-- Origin -->
+        <div class="flex items-center gap-2 bg-slate-950/80 px-3 py-2 rounded-xl border border-white/5 text-xs">
+          <span class="w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-white"></span>
+          <span class="text-slate-400">From:</span>
+          <span id="gmap-search-from" class="font-bold text-white capitalize">Hallway</span>
+        </div>
+
+        <span class="text-slate-500 font-bold">&rarr;</span>
+
+        <!-- Destination Selector -->
+        <div class="flex items-center gap-2 bg-slate-950/80 px-3 py-2 rounded-xl border border-cyan-800/60 text-xs flex-1 max-w-sm">
+          <span class="text-rose-400 text-sm">📍</span>
+          <span class="text-slate-400">To:</span>
+          <select id="destination-select" onchange="onSelectDestination(this.value)" class="bg-transparent font-bold text-cyan-300 focus:outline-none cursor-pointer flex-1 capitalize">
+            <!-- Populated dynamically with all rooms in the environment -->
+          </select>
+        </div>
+
+        <button id="btn-show-way" onclick="calculateAndShowRoute()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-md shadow-blue-900/50">
+          <span>🗺️ Show Route</span>
+        </button>
+      </div>
+
+      <!-- Quick Location Chips -->
+      <div class="flex items-center gap-1.5 overflow-x-auto py-1 text-xs" id="quick-location-chips">
+        <!-- Populated dynamically with room chips (Kitchen, Balcony, Living, etc.) -->
+      </div>
+    </div>
+
     <!-- Google Maps Green Turn-by-Turn Navigation Header Banner -->
-    <div id="gmap-banner" class="gmap-nav-banner p-3.5 flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center gap-3.5">
+    <div id="gmap-banner" class="gmap-nav-banner p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
         <div id="gmap-turn-icon" class="gmap-nav-turn-icon">
           ⬆
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-black/20 text-white/90">
+            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-black/25 text-white/95">
               Google Maps Turn-by-Turn Guidance
             </span>
-            <span id="gmap-status-pill" class="text-[10px] font-semibold px-2 py-0.5 rounded bg-white/20 text-white">
+            <span id="gmap-status-pill" class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white/20 text-white">
               Fastest Route (94.7% Match)
             </span>
           </div>
-          <h2 id="gmap-primary-instruction" class="text-base sm:text-lg font-black tracking-tight text-white mt-0.5">
+          <h2 id="gmap-primary-instruction" class="text-base sm:text-xl font-bold tracking-tight text-white mt-1">
             Head north on Hallway corridor toward Kitchen
           </h2>
-          <p id="gmap-secondary-instruction" class="text-xs text-emerald-100/90 mt-0.5 flex items-center gap-1">
+          <p id="gmap-secondary-instruction" class="text-xs text-emerald-100/90 mt-1 flex items-center gap-1">
             <span>Landmark ahead:</span> <strong id="gmap-landmark-prompt" class="underline">refrigerator</strong>
           </p>
         </div>
       </div>
 
       <!-- Live Navigation Telemetry & ETA HUD -->
-      <div class="flex items-center gap-3 bg-black/20 px-3.5 py-2 rounded-xl border border-white/20 text-xs">
+      <div class="flex items-center gap-4 bg-black/25 px-4 py-2.5 rounded-2xl border border-white/20 text-xs">
         <div class="text-right">
           <div class="text-[10px] text-emerald-200 uppercase font-medium">Remaining to Goal</div>
-          <div id="gmap-eta-dist" class="font-mono font-bold text-white text-sm">6.8 m &bull; 2 steps</div>
+          <div id="gmap-eta-dist" class="font-mono font-bold text-white text-sm sm:text-base">6.8 m &bull; 2 steps</div>
         </div>
-        <div class="h-7 w-[1px] bg-white/20"></div>
+        <div class="h-8 w-[1px] bg-white/20"></div>
         <div>
           <div class="text-[10px] text-emerald-200 uppercase font-medium">Walking Speed</div>
-          <div id="gmap-live-speed" class="font-mono font-bold text-emerald-300 text-sm">1.1 m/s</div>
+          <div id="gmap-live-speed" class="font-mono font-bold text-emerald-300 text-sm sm:text-base">1.1 m/s</div>
         </div>
       </div>
     </div>
 
     <!-- Map Canvas & Navigation Sidebar -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
       <!-- Google Maps Canvas Stage (8 Cols) -->
-      <div class="lg:col-span-8 flex flex-col gap-3">
-        <div class="glass-card p-4 flex flex-col gap-3 relative overflow-hidden">
+      <div class="lg:col-span-8 flex flex-col gap-4">
+        <div class="glass-card p-4 sm:p-5 flex flex-col gap-3 relative overflow-hidden">
 
           <!-- Google Maps Route Guidance Legend Bar -->
-          <div class="flex flex-wrap items-center justify-between gap-2 text-xs pb-1 border-b border-slate-800">
-            <div class="flex items-center gap-3">
+          <div class="flex flex-wrap items-center justify-between gap-3 text-xs pb-2 border-b border-white/5">
+            <div class="flex items-center gap-4">
               <span class="flex items-center gap-1.5 font-bold text-cyan-400">
                 <span class="w-3.5 h-1.5 bg-[#4285F4] inline-block rounded shadow-sm"></span>
                 <span>Where to Go (Recommended Route)</span>
@@ -438,19 +442,19 @@
                 <span>Where NOT to Go (Deviations ⛔)</span>
               </span>
             </div>
-            <div class="flex items-center gap-2 text-[11px] text-slate-400">
+            <div class="flex items-center gap-3 text-[11px] text-slate-400">
               <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#1a73e8] inline-block ring-2 ring-white"></span> You (Puck)</span>
               <span class="flex items-center gap-1">📍 Destination Pin (Click node to change)</span>
             </div>
           </div>
 
           <!-- Canvas Container -->
-          <div class="w-full bg-[#1b222d] rounded-2xl border border-slate-800 flex items-center justify-center p-2 relative shadow-inner overflow-hidden">
+          <div class="w-full bg-[#121826] rounded-2xl border border-white/5 flex items-center justify-center p-3 relative shadow-inner overflow-hidden">
             <canvas id="graph-canvas" width="760" height="460" class="max-w-full h-auto rounded-xl cursor-pointer" title="Click any node to navigate there"></canvas>
 
             <!-- Floating Pace Speedometer HUD in bottom-left corner of canvas -->
-            <div class="absolute bottom-4 left-4 gmap-speed-hud px-3 py-2 flex items-center gap-3 text-xs text-white z-20">
-              <div class="w-8 h-8 rounded-full bg-cyan-600/30 border border-cyan-400/50 flex items-center justify-center text-sm">
+            <div class="absolute bottom-5 left-5 gmap-speed-hud px-3.5 py-2.5 flex items-center gap-3 text-xs text-white z-20">
+              <div class="w-9 h-9 rounded-full bg-cyan-600/30 border border-cyan-400/50 flex items-center justify-center text-base">
                 🚶
               </div>
               <div>
@@ -461,40 +465,40 @@
               </div>
               <div class="h-6 w-[1px] bg-slate-700"></div>
               <div class="text-[11px]">
-                <span class="text-slate-400">Target:</span> <strong id="hud-next-room" class="text-white capitalize">Kitchen</strong>
+                <span class="text-slate-400">Target:</span> <strong id="hud-next-room" class="text-white capitalize font-semibold">Kitchen</strong>
               </div>
             </div>
 
             <!-- Floating Google Maps Navigation Controls (Re-center & Zoom) -->
-            <div class="absolute top-4 right-4 flex flex-col gap-2 z-20">
-              <button onclick="recenterMap()" class="w-8 h-8 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white border border-slate-700 flex items-center justify-center shadow-lg transition" title="Re-center on Agent">
+            <div class="absolute top-5 right-5 flex flex-col gap-2 z-20">
+              <button onclick="recenterMap()" class="w-9 h-9 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white border border-white/10 flex items-center justify-center shadow-lg transition" title="Re-center on Agent">
                 🎯
               </button>
-              <button onclick="zoomMap(1.15)" class="w-8 h-8 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white border border-slate-700 flex items-center justify-center shadow-lg transition" title="Zoom In">
+              <button onclick="zoomMap(1.15)" class="w-9 h-9 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white border border-white/10 flex items-center justify-center shadow-lg transition font-bold" title="Zoom In">
                 +
               </button>
-              <button onclick="zoomMap(0.85)" class="w-8 h-8 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white border border-slate-700 flex items-center justify-center shadow-lg transition" title="Zoom Out">
+              <button onclick="zoomMap(0.85)" class="w-9 h-9 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white border border-white/10 flex items-center justify-center shadow-lg transition font-bold" title="Zoom Out">
                 &minus;
               </button>
             </div>
           </div>
 
-          <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+          <div class="flex items-center justify-between text-xs text-slate-400 px-1 pt-1">
             <span class="text-cyan-400 font-medium">💡 Click on any room node on the map to set it as your destination and see the way!</span>
-            <span>Blue arrows indicate directional flow &bull; Red crosses mark unrecommended paths</span>
+            <span class="hidden sm:inline">Blue arrows indicate directional flow &bull; Red crosses mark deviations</span>
           </div>
         </div>
       </div>
 
       <!-- Route Traversal Telemetry & Turn Step List (4 Cols) -->
-      <div class="lg:col-span-4 flex flex-col gap-3">
+      <div class="lg:col-span-4 flex flex-col gap-4">
         <!-- Turn-by-Turn Route Steps -->
-        <div class="glass-card p-4 flex flex-col gap-2.5">
+        <div class="glass-card p-4 sm:p-5 flex flex-col gap-3">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
               Navigation Route Itinerary
             </span>
-            <span id="gmap-total-steps-badge" class="text-[11px] font-mono text-cyan-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+            <span id="gmap-total-steps-badge" class="text-[11px] font-mono text-cyan-400 bg-slate-900 px-2.5 py-0.5 rounded-lg border border-white/5 font-semibold">
               Optimal: 3 Steps
             </span>
           </div>
@@ -505,12 +509,12 @@
         </div>
 
         <!-- Traversal History Log -->
-        <div class="glass-card p-4 flex flex-col gap-2 flex-1">
+        <div class="glass-card p-4 sm:p-5 flex flex-col gap-3 flex-1">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
               Visited Viewpoints Log
             </span>
-            <span id="visited-count-tag" class="text-[11px] font-mono text-cyan-400 bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+            <span id="visited-count-tag" class="text-[11px] font-mono text-cyan-400 bg-slate-900 px-2.5 py-0.5 rounded-lg border border-white/5 font-semibold">
               1 node
             </span>
           </div>
@@ -521,15 +525,15 @@
         </div>
 
         <!-- Quick Controls in Floorplan -->
-        <div class="glass-card p-3 flex items-center justify-between gap-2">
-          <button onclick="document.getElementById('btn-step').click()" class="flex-1 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-md shadow-cyan-950/50">
+        <div class="glass-card p-3.5 flex items-center justify-between gap-2.5">
+          <button onclick="document.getElementById('btn-step').click()" class="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-md shadow-cyan-950/50">
             <span>Walk Next Step</span>
             <span>&rarr;</span>
           </button>
-          <button onclick="document.getElementById('btn-play').click()" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-md shadow-emerald-950/50">
+          <button onclick="document.getElementById('btn-play').click()" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-md shadow-emerald-950/50">
             <span>Auto Walk</span>
           </button>
-          <button onclick="document.getElementById('btn-backtrack').click()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium transition">
+          <button onclick="document.getElementById('btn-backtrack').click()" class="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl text-xs font-medium transition border border-white/5">
             ↩ Revert
           </button>
         </div>
@@ -541,18 +545,18 @@
   <!-- ======================================================== -->
   <!-- SECTION 3: UNCERTAINTY & SAFETY DIAGNOSTICS -->
   <!-- ======================================================== -->
-  <section id="section-uncertainty" class="hidden flex flex-col gap-3">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
+  <section id="section-uncertainty" class="hidden flex flex-col gap-4">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
       <!-- Diagnostic Metrics (5 Cols) -->
-      <div class="lg:col-span-5 flex flex-col gap-3">
-        <div class="glass-card p-5 flex flex-col gap-4">
+      <div class="lg:col-span-5 flex flex-col gap-4">
+        <div class="glass-card p-5 sm:p-6 flex flex-col gap-4">
           <div class="flex items-center justify-between">
             <div>
               <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
                 Safety &amp; Reliability State
               </span>
-              <h3 class="text-base font-bold text-white mt-0.5">Reliability State Machine</h3>
+              <h3 class="text-base font-bold text-white mt-1">Reliability State Machine</h3>
             </div>
             <span id="uncertainty-status-badge" class="px-3 py-1 text-xs font-bold rounded-full badge-reliable">
               RELIABLE
@@ -560,43 +564,43 @@
           </div>
 
           <!-- Shannon Entropy Bar -->
-          <div class="bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 flex flex-col gap-2">
+          <div class="bg-slate-900/60 p-4 rounded-xl border border-white/5 flex flex-col gap-2.5">
             <div class="flex justify-between items-center text-xs">
               <span class="text-slate-300 font-medium">Predictive Action Entropy $H(\pi)$:</span>
               <span id="entropy-value" class="font-mono text-sm text-cyan-300 font-bold">0.32 (Low)</span>
             </div>
-            <div class="w-full bg-slate-950 rounded-full h-2.5 border border-slate-800 overflow-hidden">
+            <div class="w-full bg-slate-950 rounded-full h-2.5 border border-white/5 overflow-hidden">
               <div id="entropy-bar" class="bg-cyan-500 h-full rounded-full transition-all duration-300" style="width: 25%"></div>
             </div>
-            <p class="text-[11px] text-slate-400">
+            <p class="text-[11px] text-slate-400 leading-relaxed">
               Entropy measures action spread. Thresholds: $H &lt; 0.8$ Reliable, $0.8 \le H &lt; 1.3$ Cautious, $H \ge 1.3$ Unreliable.
             </p>
           </div>
 
           <!-- Confidence Margin Bar -->
-          <div class="bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 flex flex-col gap-2">
+          <div class="bg-slate-900/60 p-4 rounded-xl border border-white/5 flex flex-col gap-2.5">
             <div class="flex justify-between items-center text-xs">
               <span class="text-slate-300 font-medium">Top Decision Confidence:</span>
               <span id="confidence-value" class="font-mono text-sm text-emerald-400 font-bold">84.2%</span>
             </div>
-            <div class="w-full bg-slate-950 rounded-full h-2.5 border border-slate-800 overflow-hidden">
+            <div class="w-full bg-slate-950 rounded-full h-2.5 border border-white/5 overflow-hidden">
               <div id="confidence-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width: 84%"></div>
             </div>
-            <p class="text-[11px] text-slate-400">
+            <p class="text-[11px] text-slate-400 leading-relaxed">
               Probability assigned to top-ranked candidate action over alternative paths.
             </p>
           </div>
 
           <!-- Backtrack Safety Intervention -->
-          <div id="backtrack-alert" class="p-3.5 bg-rose-950/60 rounded-xl border border-rose-800/80 text-xs flex flex-col gap-2">
+          <div id="backtrack-alert" class="p-4 bg-rose-950/50 rounded-xl border border-rose-800/60 text-xs flex flex-col gap-2.5">
             <div class="flex items-center gap-2 text-rose-200 font-semibold">
               <span>⚠️</span>
               <span>Deviation Detected! Agent unreliability triggered.</span>
             </div>
-            <p class="text-rose-300/80 text-[11px]">
+            <p class="text-rose-300/80 text-[11px] leading-relaxed">
               The agent has either encountered high entropy, loop repetition, or perceptual dissonance. Backtracking reverts state to the last verified node.
             </p>
-            <button id="btn-backtrack-alert" class="mt-1 px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-bold transition text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-rose-950/50">
+            <button id="btn-backtrack-alert" class="mt-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold transition text-xs flex items-center justify-center gap-2 shadow-lg shadow-rose-950/50">
               <span>↩</span>
               <span>Execute Emergency Backtrack</span>
             </button>
@@ -605,10 +609,10 @@
       </div>
 
       <!-- Real-Time Diagnostic Reasoning Feed (7 Cols) -->
-      <div class="lg:col-span-7 flex flex-col gap-3">
-        <div class="glass-card p-5 flex flex-col gap-3 flex-1">
+      <div class="lg:col-span-7 flex flex-col gap-4">
+        <div class="glass-card p-5 sm:p-6 flex flex-col gap-4 flex-1">
           <div class="flex items-center justify-between">
-            <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
               Diagnostic Reasoning Feed
             </span>
             <span class="text-xs text-slate-400">
@@ -616,8 +620,8 @@
             </span>
           </div>
 
-          <div class="p-4 bg-slate-900/90 rounded-xl border border-slate-800 text-sm leading-relaxed">
-            <span class="text-xs font-bold uppercase tracking-wider text-cyan-400 block mb-1">
+          <div class="p-4 bg-slate-900/60 rounded-xl border border-white/5 text-sm leading-relaxed">
+            <span class="text-xs font-bold uppercase tracking-wider text-cyan-400 block mb-1.5">
               Active Assessment:
             </span>
             <p id="diagnostic-text" class="text-slate-200">
@@ -626,9 +630,9 @@
           </div>
 
           <!-- Mathematical Formulation Context -->
-          <div class="p-4 bg-slate-900/50 rounded-xl border border-slate-800/70 text-xs text-slate-300 flex flex-col gap-2 mt-auto">
-            <h4 class="font-semibold text-white">Uncertainty Estimation Mechanics:</h4>
-            <ul class="list-disc pl-4 space-y-1 text-slate-400">
+          <div class="p-4 bg-slate-900/40 rounded-xl border border-white/5 text-xs text-slate-300 flex flex-col gap-2.5 mt-auto">
+            <h4 class="font-bold text-white">Uncertainty Estimation Mechanics:</h4>
+            <ul class="list-disc pl-4 space-y-1.5 text-slate-400 leading-relaxed">
               <li><strong>Predictive Shannon Entropy:</strong> $H(\pi) = -\sum_{a} \pi(a \mid s, I) \log_2 \pi(a \mid s, I)$.</li>
               <li><strong>Cross-Modal Dissonance:</strong> Angle deviation between instruction directional cues and candidate vectors.</li>
               <li><strong>Cycle Detection:</strong> Sliding window of recent viewpoints detecting topological loops $(v_{t} = v_{t-2})$.</li>
@@ -643,130 +647,130 @@
   <!-- ======================================================== -->
   <!-- SECTION 4: BENCHMARK ANALYTICS & METRICS -->
   <!-- ======================================================== -->
-  <section id="section-benchmark" class="hidden flex flex-col gap-3">
+  <section id="section-benchmark" class="hidden flex flex-col gap-4">
     <!-- Primary 4 KPI Metric Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-      <div class="glass-card p-4 flex flex-col gap-1 border-cyan-900/40">
-        <span class="text-slate-400 text-xs font-medium uppercase tracking-wider">Task Success Rate (SR)</span>
-        <div class="flex items-baseline gap-2 mt-1">
-          <span id="metric-sr" class="text-2xl font-black text-cyan-400 font-mono">Pending</span>
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="glass-card p-5 flex flex-col gap-1 border-cyan-900/30">
+        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Task Success Rate (SR)</span>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span id="metric-sr" class="text-3xl font-black text-cyan-400 font-mono">Pending</span>
         </div>
-        <p class="text-[11px] text-slate-400 mt-1">Binary success: stopped within 3.0m of target goal node.</p>
+        <p class="text-[11px] text-slate-400 mt-1.5">Binary success: stopped within 3.0m of target goal node.</p>
       </div>
 
-      <div class="glass-card p-4 flex flex-col gap-1 border-emerald-900/40">
-        <span class="text-slate-400 text-xs font-medium uppercase tracking-wider">Route Efficiency (SPL)</span>
-        <div class="flex items-baseline gap-2 mt-1">
-          <span id="metric-spl" class="text-2xl font-black text-emerald-400 font-mono">--</span>
+      <div class="glass-card p-5 flex flex-col gap-1 border-emerald-900/30">
+        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Route Efficiency (SPL)</span>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span id="metric-spl" class="text-3xl font-black text-emerald-400 font-mono">--</span>
         </div>
-        <p class="text-[11px] text-slate-400 mt-1">Success weighted by normalized Path Length vs optimal reference.</p>
+        <p class="text-[11px] text-slate-400 mt-1.5">Success weighted by normalized Path Length vs optimal reference.</p>
       </div>
 
-      <div class="glass-card p-4 flex flex-col gap-1 border-blue-900/40">
-        <span class="text-slate-400 text-xs font-medium uppercase tracking-wider">Path Fidelity (nDTW)</span>
-        <div class="flex items-baseline gap-2 mt-1">
-          <span id="metric-ndtw" class="text-2xl font-black text-blue-400 font-mono">100.0%</span>
+      <div class="glass-card p-5 flex flex-col gap-1 border-blue-900/30">
+        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Path Fidelity (nDTW)</span>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span id="metric-ndtw" class="text-3xl font-black text-blue-400 font-mono">100.0%</span>
         </div>
-        <p class="text-[11px] text-slate-400 mt-1">Normalized Dynamic Time Warping alignment along path.</p>
+        <p class="text-[11px] text-slate-400 mt-1.5">Normalized Dynamic Time Warping alignment along path.</p>
       </div>
 
-      <div class="glass-card p-4 flex flex-col gap-1 border-purple-900/40">
-        <span class="text-slate-400 text-xs font-medium uppercase tracking-wider">Navigation Error (NE)</span>
-        <div class="flex items-baseline gap-2 mt-1">
-          <span id="metric-ne" class="text-2xl font-black text-purple-400 font-mono">7.5 m</span>
+      <div class="glass-card p-5 flex flex-col gap-1 border-purple-900/30">
+        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Navigation Error (NE)</span>
+        <div class="flex items-baseline gap-2 mt-2">
+          <span id="metric-ne" class="text-3xl font-black text-purple-400 font-mono">7.5 m</span>
         </div>
-        <p class="text-[11px] text-slate-400 mt-1">Geodesic distance between agent final stop and target goal.</p>
+        <p class="text-[11px] text-slate-400 mt-1.5">Geodesic distance between agent final stop and target goal.</p>
       </div>
     </div>
 
     <!-- Multilingual Benchmark Evaluation Matrix Table -->
-    <div class="glass-card p-5 flex flex-col gap-3">
-      <div class="flex items-center justify-between">
+    <div class="glass-card p-5 sm:p-6 flex flex-col gap-4">
+      <div class="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h3 class="text-sm font-bold text-white">Full RxR Multilingual Evaluation Benchmark Matrix</h3>
-          <p class="text-xs text-slate-400">Empirical validation across 21 test configurations, 3 languages, and Seen vs Unseen environments</p>
+          <h3 class="text-base font-bold text-white">Full RxR Multilingual Evaluation Benchmark Matrix</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Empirical validation across 21 test configurations, 3 languages, and Seen vs Unseen environments</p>
         </div>
-        <span class="px-2.5 py-1 text-xs font-bold rounded-lg bg-emerald-950 text-emerald-400 border border-emerald-800">
+        <span class="px-3 py-1 text-xs font-bold rounded-xl bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 font-mono">
           Overall Success: 90.5% (19/21)
         </span>
       </div>
 
-      <div class="overflow-x-auto rounded-xl border border-slate-800 mt-1">
+      <div class="overflow-x-auto rounded-xl border border-white/5 mt-1">
         <table class="w-full text-xs text-left">
-          <thead class="bg-slate-900/90 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800">
+          <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-white/5">
             <tr>
-              <th class="p-3">Language</th>
-              <th class="p-3">Environment Split</th>
-              <th class="p-3">Episodes Evaluated</th>
-              <th class="p-3">Success Rate (SR)</th>
-              <th class="p-3">SPL</th>
-              <th class="p-3">nDTW</th>
-              <th class="p-3">Nav Error (NE)</th>
+              <th class="p-3.5">Language</th>
+              <th class="p-3.5">Environment Split</th>
+              <th class="p-3.5">Episodes Evaluated</th>
+              <th class="p-3.5">Success Rate (SR)</th>
+              <th class="p-3.5">SPL</th>
+              <th class="p-3.5">nDTW</th>
+              <th class="p-3.5">Nav Error (NE)</th>
             </tr>
           </thead>
-          <tbody class="divide-y border-slate-800/60 font-mono text-slate-300">
-            <tr class="hover:bg-slate-900/40">
-              <td class="p-3 font-semibold text-white">English (en)</td>
-              <td class="p-3 text-emerald-400">Val-Seen</td>
-              <td class="p-3">4 episodes</td>
-              <td class="p-3 text-emerald-400 font-bold">100.0%</td>
-              <td class="p-3">0.963</td>
-              <td class="p-3">94.7%</td>
-              <td class="p-3">0.00 m</td>
+          <tbody class="divide-y divide-white/5 font-mono text-slate-300">
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-3.5 font-semibold text-white">English (en)</td>
+              <td class="p-3.5 text-emerald-400">Val-Seen</td>
+              <td class="p-3.5">4 episodes</td>
+              <td class="p-3.5 text-emerald-400 font-bold">100.0%</td>
+              <td class="p-3.5">0.963</td>
+              <td class="p-3.5">94.7%</td>
+              <td class="p-3.5">0.00 m</td>
             </tr>
-            <tr class="hover:bg-slate-900/40">
-              <td class="p-3 font-semibold text-white">English (en)</td>
-              <td class="p-3 text-cyan-400">Val-Unseen</td>
-              <td class="p-3">3 episodes</td>
-              <td class="p-3 text-emerald-400 font-bold">100.0%</td>
-              <td class="p-3">0.965</td>
-              <td class="p-3">95.4%</td>
-              <td class="p-3">0.00 m</td>
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-3.5 font-semibold text-white">English (en)</td>
+              <td class="p-3.5 text-cyan-400">Val-Unseen</td>
+              <td class="p-3.5">3 episodes</td>
+              <td class="p-3.5 text-emerald-400 font-bold">100.0%</td>
+              <td class="p-3.5">0.965</td>
+              <td class="p-3.5">95.4%</td>
+              <td class="p-3.5">0.00 m</td>
             </tr>
-            <tr class="hover:bg-slate-900/40">
-              <td class="p-3 font-semibold text-white">हिंदी Hindi (hi)</td>
-              <td class="p-3 text-emerald-400">Val-Seen</td>
-              <td class="p-3">4 episodes</td>
-              <td class="p-3 text-emerald-400 font-bold">100.0%</td>
-              <td class="p-3">0.963</td>
-              <td class="p-3">94.7%</td>
-              <td class="p-3">0.00 m</td>
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-3.5 font-semibold text-white">हिंदी Hindi (hi)</td>
+              <td class="p-3.5 text-emerald-400">Val-Seen</td>
+              <td class="p-3.5">4 episodes</td>
+              <td class="p-3.5 text-emerald-400 font-bold">100.0%</td>
+              <td class="p-3.5">0.963</td>
+              <td class="p-3.5">94.7%</td>
+              <td class="p-3.5">0.00 m</td>
             </tr>
-            <tr class="hover:bg-slate-900/40">
-              <td class="p-3 font-semibold text-white">हिंदी Hindi (hi)</td>
-              <td class="p-3 text-cyan-400">Val-Unseen</td>
-              <td class="p-3">3 episodes</td>
-              <td class="p-3 text-amber-400 font-bold">66.7%</td>
-              <td class="p-3">0.638</td>
-              <td class="p-3">91.3%</td>
-              <td class="p-3">1.25 m</td>
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-3.5 font-semibold text-white">हिंदी Hindi (hi)</td>
+              <td class="p-3.5 text-cyan-400">Val-Unseen</td>
+              <td class="p-3.5">3 episodes</td>
+              <td class="p-3.5 text-amber-400 font-bold">66.7%</td>
+              <td class="p-3.5">0.638</td>
+              <td class="p-3.5">91.3%</td>
+              <td class="p-3.5">1.25 m</td>
             </tr>
-            <tr class="hover:bg-slate-900/40">
-              <td class="p-3 font-semibold text-white">తెలుగు Telugu (te)</td>
-              <td class="p-3 text-emerald-400">Val-Seen</td>
-              <td class="p-3">4 episodes</td>
-              <td class="p-3 text-emerald-400 font-bold">100.0%</td>
-              <td class="p-3">0.963</td>
-              <td class="p-3">94.7%</td>
-              <td class="p-3">0.00 m</td>
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-3.5 font-semibold text-white">తెలుగు Telugu (te)</td>
+              <td class="p-3.5 text-emerald-400">Val-Seen</td>
+              <td class="p-3.5">4 episodes</td>
+              <td class="p-3.5 text-emerald-400 font-bold">100.0%</td>
+              <td class="p-3.5">0.963</td>
+              <td class="p-3.5">94.7%</td>
+              <td class="p-3.5">0.00 m</td>
             </tr>
-            <tr class="hover:bg-slate-900/40">
-              <td class="p-3 font-semibold text-white">తెలుగు Telugu (te)</td>
-              <td class="p-3 text-cyan-400">Val-Unseen</td>
-              <td class="p-3">3 episodes</td>
-              <td class="p-3 text-amber-400 font-bold">66.7%</td>
-              <td class="p-3">0.640</td>
-              <td class="p-3">92.9%</td>
-              <td class="p-3">1.21 m</td>
+            <tr class="hover:bg-white/[0.02]">
+              <td class="p-3.5 font-semibold text-white">తెలుగు Telugu (te)</td>
+              <td class="p-3.5 text-cyan-400">Val-Unseen</td>
+              <td class="p-3.5">3 episodes</td>
+              <td class="p-3.5 text-amber-400 font-bold">66.7%</td>
+              <td class="p-3.5">0.640</td>
+              <td class="p-3.5">92.9%</td>
+              <td class="p-3.5">1.21 m</td>
             </tr>
             <tr class="bg-cyan-950/20 font-bold text-cyan-300">
-              <td class="p-3">Total / Overall</td>
-              <td class="p-3">Seen + Unseen</td>
-              <td class="p-3">21 episodes</td>
-              <td class="p-3 text-emerald-400">90.5%</td>
-              <td class="p-3">0.865</td>
-              <td class="p-3">94.1%</td>
-              <td class="p-3">0.35 m</td>
+              <td class="p-3.5">Total / Overall</td>
+              <td class="p-3.5">Seen + Unseen</td>
+              <td class="p-3.5">21 episodes</td>
+              <td class="p-3.5 text-emerald-400">90.5%</td>
+              <td class="p-3.5">0.865</td>
+              <td class="p-3.5">94.1%</td>
+              <td class="p-3.5">0.35 m</td>
             </tr>
           </tbody>
         </table>
@@ -777,53 +781,55 @@
   <!-- ======================================================== -->
   <!-- SECTION 5: STRUCTURED OVERVIEW (All Sections Integrated) -->
   <!-- ======================================================== -->
-  <section id="section-overview" class="hidden flex flex-col gap-3">
-    <!-- Spacious 2-Column Grid Layout -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-3">
+  <section id="section-overview" class="hidden flex flex-col gap-4">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
       
       <!-- Card A: Instruction & State Reasoning Summary -->
-      <div class="glass-card p-4 flex flex-col gap-3">
-        <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+      <div class="glass-card p-5 flex flex-col gap-3.5">
+        <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
           Natural-Language Instruction &amp; Goal
         </span>
-        <div id="overview-instruction-copy" class="p-3 bg-slate-900/90 rounded-xl border border-slate-800 text-sm leading-relaxed">
+        <div id="overview-instruction-copy" class="p-4 bg-slate-900/60 rounded-xl border border-white/5 text-sm leading-relaxed">
           <!-- Synced instruction text -->
         </div>
-        <div class="grid grid-cols-2 gap-2 text-xs">
-          <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
-            <span class="text-slate-400 block">Current Node:</span>
-            <span id="overview-node-text" class="text-sm font-mono text-cyan-300">seen1_hallway</span>
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5">
+            <span class="text-slate-400 block text-[11px]">Current Node:</span>
+            <span id="overview-node-text" class="text-sm font-mono text-cyan-300 font-semibold mt-0.5 block">seen1_hallway</span>
+            <span id="current-node-text" class="hidden">seen1_hallway</span>
           </div>
-          <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
-            <span class="text-slate-400 block">Agent Heading:</span>
-            <span id="overview-heading-text" class="text-sm font-semibold text-white">0.0&deg;</span>
+          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5">
+            <span class="text-slate-400 block text-[11px]">Agent Heading:</span>
+            <span id="overview-heading-text" class="text-sm font-semibold text-white mt-0.5 block">0.0&deg;</span>
+            <span id="current-room-text" class="hidden">hallway</span>
           </div>
         </div>
       </div>
 
       <!-- Card B: Viewport Preview -->
-      <div class="glass-card p-4 flex flex-col gap-3">
+      <div class="glass-card p-5 flex flex-col gap-3.5">
         <div class="flex items-center justify-between">
-          <span class="text-xs font-semibold text-slate-300 uppercase tracking-wider">
-            First-Person Viewport
+          <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
+            First-Person Viewport Preview
           </span>
-          <span id="overview-room-tag" class="text-xs font-semibold text-white capitalize bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+          <span id="overview-room-tag" class="text-xs font-semibold text-white capitalize bg-slate-900/90 px-2.5 py-0.5 rounded-lg border border-white/5">
             Hallway
           </span>
         </div>
-        <div class="p-4 bg-slate-950 rounded-xl border border-slate-800 flex items-center gap-4">
-          <div id="overview-room-icon" class="w-14 h-14 rounded-2xl bg-cyan-950/70 border border-cyan-700/60 flex items-center justify-center text-3xl">
+        <div class="p-4 bg-slate-950/80 rounded-xl border border-white/5 flex items-center gap-4">
+          <div id="overview-room-icon" class="w-14 h-14 rounded-2xl bg-cyan-950/60 border border-cyan-500/30 flex items-center justify-center text-3xl">
             🏠
           </div>
           <div>
             <h4 id="overview-room-name" class="text-base font-bold text-white capitalize">Hallway</h4>
-            <p id="overview-room-desc" class="text-xs text-slate-400 italic">Ahead is the open hallway leading deeper into the house</p>
+            <p id="overview-room-desc" class="text-xs text-slate-400 italic mt-0.5">Ahead is the open hallway leading deeper into the house</p>
           </div>
         </div>
-        <div class="flex items-center justify-between text-xs text-slate-400">
-          <span>Traversed: <strong id="overview-dist-text" class="text-white">0.0 m</strong></span>
-          <button onclick="switchTab('action')" class="text-cyan-400 hover:text-cyan-300 underline font-medium">
-            Open Full Action Studio &rarr;
+        <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
+          <span>Traversed: <strong id="overview-dist-text" class="text-white font-mono">0.0 m</strong></span>
+          <button onclick="switchTab('action')" class="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
+            <span>Open Full Action Studio</span>
+            <span>&rarr;</span>
           </button>
         </div>
       </div>
