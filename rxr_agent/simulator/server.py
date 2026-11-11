@@ -298,18 +298,41 @@ class SimulationSession:
 GLOBAL_SESSION = SimulationSession()
 
 
+class ThreadedSimulatorServer(socketserver.ThreadingTCPServer):
+    """Multi-threaded server to handle concurrent browser asset & API requests seamlessly."""
+    allow_reuse_address = True
+    daemon_threads = True
+
+
 class SimulatorRequestHandler(http.server.SimpleHTTPRequestHandler):
     """Handles static files and JSON REST endpoints."""
 
     def __init__(self, *args, **kwargs):
-        # Base web directory
         web_dir = os.path.join(os.path.dirname(__file__), "web")
         super().__init__(*args, directory=web_dir, **kwargs)
 
+    def end_headers(self):
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.send_header("Cache-Control", "no-cache, no-store, must-revalidate")
+        super().end_headers()
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.end_headers()
+
     def do_GET(self):
         parsed = urlparse(self.path)
-        if parsed.path in ("/login", "/login/"):
+        if parsed.path in ("", "/"):
+            # Serve login.html by default on root
             self.path = "/login.html"
+            super().do_GET()
+        elif parsed.path in ("/login", "/login/"):
+            self.path = "/login.html"
+            super().do_GET()
+        elif parsed.path in ("/simulator", "/simulator/"):
+            self.path = "/index.html"
             super().do_GET()
         elif parsed.path == "/api/episodes":
             episodes = get_rxr_episodes()
@@ -386,13 +409,13 @@ class SimulatorRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 
 def run_simulator_server(port: int = 8080, initial_episode: str = "rxr_seen1_ep01", initial_lang: str = "en"):
-    """Starts the interactive simulator server."""
+    """Starts the interactive simulator server with multi-threading."""
     GLOBAL_SESSION.load_episode(initial_episode, initial_lang)
     server_address = ("", port)
-    with socketserver.TCPServer(server_address, SimulatorRequestHandler) as httpd:
+    with ThreadedSimulatorServer(server_address, SimulatorRequestHandler) as httpd:
         print(f"=================================================================")
         print(f"  RxR Multilingual VLN Interactive Simulator running at:")
-        print(f"  http://localhost:{port}")
+        print(f"  http://localhost:{port} (or http://127.0.0.1:{port})")
         print(f"=================================================================")
         try:
             httpd.serve_forever()
