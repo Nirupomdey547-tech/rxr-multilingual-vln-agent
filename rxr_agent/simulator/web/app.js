@@ -32,37 +32,58 @@
   let mapZoom = 1.0;
   let animFrameId = null;
 
-  // Room Icons mapping
-  const ROOM_ICONS = {
-    entrance_foyer: "🚪",
-    foyer: "🚪",
-    hallway: "🚶",
-    corridor: "🚶",
-    living_room: "🛋️",
-    dining_room: "🍽️",
-    kitchen: "🍳",
-    open_kitchen: "🍳",
-    chef_kitchen: "🍳",
-    balcony: "🌿",
-    private_terrace: "🌿",
-    roof_deck: "☀️",
-    staircase_landing: "🪜",
-    master_bedroom: "🛏️",
-    guest_bedroom: "🛏️",
-    master_suite: "🛏️",
-    bathroom: "🚿",
-    powder_room: "🚿",
-    library: "📚",
-    central_courtyard: "⛲",
-    dining_hall: "🍷",
-    tea_lounge: "☕",
-    pantry: "🧂",
-    home_office: "💻",
-    elevator_landing: "🛗",
-    glass_atrium: "🌴",
-    art_gallery: "🎨",
-    glass_sunroom: "🪟"
+  // ---- Inline icon set (replaces emoji) ----
+  const svg = (d, size = 16, sw = 2) =>
+    `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+  const ICON_PLAY  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 001.5.86l12.4-7.5a1 1 0 000-1.72L8.5 3.64A1 1 0 007 4.5z"/></svg>';
+  const ICON_PAUSE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+  const TURN = {
+    straight: svg('<path d="M12 20V5M6 11l6-6 6 6"/>', 26, 2),
+    right:    svg('<path d="M6 20v-7a4 4 0 014-4h8M14 5l4 4-4 4"/>', 26, 2),
+    left:     svg('<path d="M18 20v-7a4 4 0 00-4-4H6M10 5L6 9l4 4"/>', 26, 2),
+    flag:     svg('<path d="M5 21V4M5 4h12l-2 4 2 4H5"/>', 24, 2),
+    back:     svg('<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 010 11H11"/>', 24, 2)
   };
+  const ARROW = {
+    stop:  svg('<rect x="6" y="6" width="12" height="12" rx="2"/>', 13, 2),
+    left:  svg('<path d="M17 17L7 7M7 15V7h8"/>', 13, 2),
+    right: svg('<path d="M7 17L17 7M9 7h8v8"/>', 13, 2),
+    up:    svg('<path d="M12 19V5M6 11l6-6 6 6"/>', 13, 2)
+  };
+
+  // ---- Theme (light / dark) & canvas palette ----
+  let PAL = {};
+  function readPalette() {
+    const cs = getComputedStyle(document.documentElement);
+    const v = (n) => cs.getPropertyValue(n).trim();
+    PAL = {
+      bg: v("--canvas-bg"), grid: v("--canvas-grid"), road: v("--canvas-road"), roadEdge: v("--canvas-road-edge"),
+      node: v("--canvas-node"), nodeEdge: v("--canvas-node-edge"), label: v("--canvas-label"),
+      route: v("--canvas-route"), routeSoft: v("--canvas-route-soft"), track: v("--canvas-track"), danger: v("--canvas-danger")
+    };
+  }
+  function withAlpha(hex, a) {
+    const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
+    if (!m) return hex;
+    return `rgba(${parseInt(m[1], 16)}, ${parseInt(m[2], 16)}, ${parseInt(m[3], 16)}, ${a})`;
+  }
+  function syncThemeIcon() {
+    const el = document.getElementById("theme-icon");
+    if (!el) return;
+    const dark = document.documentElement.getAttribute("data-theme") === "dark";
+    el.innerHTML = dark
+      ? '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'
+      : '<path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/>';
+  }
+  window.toggleTheme = function() {
+    const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("rxr_theme", next);
+    readPalette();
+    syncThemeIcon();
+  };
+  readPalette();
+  syncThemeIcon();
 
   // DOM Elements
   const elEpisodeSelect = document.getElementById("episode-select");
@@ -195,25 +216,11 @@
   // Switch between Panoramic Camera View and Embedded Google Map in Action Studio
   window.switchStudioView = function(mode) {
     studioViewMode = mode;
-    if (mode === "map") {
-      if (elViewportStage) elViewportStage.classList.add("hidden");
-      if (elStudioMapStage) elStudioMapStage.classList.remove("hidden");
-      if (elViewModeMap) {
-        elViewModeMap.className = "px-2 py-0.5 rounded font-medium bg-cyan-600 text-white transition";
-      }
-      if (elViewModeCamera) {
-        elViewModeCamera.className = "px-2 py-0.5 rounded font-medium text-slate-300 hover:text-white transition";
-      }
-    } else {
-      if (elViewportStage) elViewportStage.classList.remove("hidden");
-      if (elStudioMapStage) elStudioMapStage.classList.add("hidden");
-      if (elViewModeCamera) {
-        elViewModeCamera.className = "px-2 py-0.5 rounded font-medium bg-cyan-600 text-white transition";
-      }
-      if (elViewModeMap) {
-        elViewModeMap.className = "px-2 py-0.5 rounded font-medium text-slate-300 hover:text-white transition";
-      }
-    }
+    const isMap = mode === "map";
+    if (elViewportStage) elViewportStage.classList.toggle("hidden", isMap);
+    if (elStudioMapStage) elStudioMapStage.classList.toggle("hidden", !isMap);
+    if (elViewModeMap) elViewModeMap.classList.toggle("active", isMap);
+    if (elViewModeCamera) elViewModeCamera.classList.toggle("active", !isMap);
   };
 
   // AI Speech Synthesis Narration Engine
@@ -237,7 +244,7 @@
     if (elAiVoiceEqualizer) elAiVoiceEqualizer.classList.remove("hidden");
     if (elAiVoiceStatus) {
       elAiVoiceStatus.classList.remove("hidden");
-      elAiVoiceStatus.innerText = "Speaking instruction...";
+      elAiVoiceStatus.innerText = "Speaking…";
     }
 
     utterance.onend = () => {
@@ -255,8 +262,8 @@
 
   window.toggleVoiceNarration = function() {
     isVoiceEnabled = !isVoiceEnabled;
-    if (elVoiceIcon) elVoiceIcon.innerText = isVoiceEnabled ? "🔊" : "🔇";
-    if (elVoiceStatusText) elVoiceStatusText.innerText = isVoiceEnabled ? "AI Voice: ON" : "AI Voice: MUTED";
+    if (elVoiceIcon) elVoiceIcon.className = isVoiceEnabled ? "dot ok" : "dot";
+    if (elVoiceStatusText) elVoiceStatusText.innerText = isVoiceEnabled ? "Voice on" : "Voice muted";
     if (!isVoiceEnabled && window.speechSynthesis) {
       window.speechSynthesis.cancel();
       if (elAiVoiceEqualizer) elAiVoiceEqualizer.classList.add("hidden");
@@ -297,27 +304,27 @@
 
       if (isActive) {
         line.innerHTML = `
-          <div class="flex items-center gap-2.5 flex-1">
-            <span class="text-cyan-400 font-bold animate-pulse text-base">➔</span>
-            <span class="text-white font-bold leading-relaxed">${cleanSent}</span>
+          <div class="lead">
+            <span class="idx">${idx + 1}</span>
+            <span class="txt">${cleanSent}</span>
           </div>
-          <button onclick="speakNavigationInstruction('${escapedSent}', '${currentLanguage}')" class="px-2 py-0.5 rounded text-[11px] bg-cyan-900/60 hover:bg-cyan-800 text-cyan-300 font-semibold transition border border-cyan-700/60 flex items-center gap-1">
-            <span>🔊</span>
+          <button onclick="event.stopPropagation(); speakNavigationInstruction('${escapedSent}', '${currentLanguage}')" class="btn btn-sm" aria-label="Hear instruction">
+            ${svg('<path d="M11 5L6 9H2v6h4l5 4zM15.5 8.5a5 5 0 010 7M19 5a10 10 0 010 14"/>', 14, 1.8)}
             <span>Hear</span>
           </button>
         `;
       } else if (isPast) {
         line.innerHTML = `
-          <div class="flex items-center gap-2.5 flex-1">
-            <span class="text-emerald-500 font-bold text-xs">✓</span>
-            <span class="text-slate-500 line-through leading-relaxed">${cleanSent}</span>
+          <div class="lead">
+            <span class="idx">${svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>', 13, 2.4)}</span>
+            <span class="txt">${cleanSent}</span>
           </div>
         `;
       } else {
         line.innerHTML = `
-          <div class="flex items-center gap-2.5 flex-1">
-            <span class="text-slate-600 font-mono text-[10px]">${idx + 1}</span>
-            <span class="text-slate-400 leading-relaxed">${cleanSent}</span>
+          <div class="lead">
+            <span class="idx">${idx + 1}</span>
+            <span class="txt">${cleanSent}</span>
           </div>
         `;
       }
@@ -590,9 +597,7 @@
       Object.values(nodes).forEach(n => {
         const opt = document.createElement("option");
         opt.value = n.id;
-        opt.className = "bg-slate-900 text-white";
-        const icon = ROOM_ICONS[n.room_type] || "📍";
-        opt.innerText = `${icon} ${n.room_type.replace(/_/g, " ")} (${n.id})`;
+        opt.innerText = n.room_type.replace(/_/g, " ");
         if (n.id === currentGoal) opt.selected = true;
         elDestinationSelect.appendChild(opt);
       });
@@ -602,9 +607,8 @@
       elQuickLocationChips.innerHTML = "";
       Object.values(nodes).forEach(n => {
         const chip = document.createElement("button");
-        const icon = ROOM_ICONS[n.room_type] || "📍";
-        chip.className = `destination-chip ${n.id === currentGoal ? "active" : ""}`;
-        chip.innerHTML = `<span>${icon}</span><span>${n.room_type.replace(/_/g, " ")}</span>`;
+        chip.className = `chip ${n.id === currentGoal ? "active" : ""}`;
+        chip.innerText = n.room_type.replace(/_/g, " ");
         chip.onclick = () => window.onSelectDestination(n.id);
         elQuickLocationChips.appendChild(chip);
       });
@@ -683,13 +687,7 @@
     currentLanguage = lang;
     Object.keys(langButtons).forEach(k => {
       const btn = langButtons[k];
-      if (btn) {
-        if (k === lang) {
-          btn.className = "lang-btn px-2.5 py-1 rounded-lg font-medium bg-cyan-600 text-white transition shadow-sm";
-        } else {
-          btn.className = "lang-btn px-2.5 py-1 rounded-lg font-medium text-slate-300 hover:text-white transition";
-        }
-      }
+      if (btn) btn.classList.toggle("active", k === lang);
     });
 
     try {
@@ -717,24 +715,18 @@
     if (simState && simState.state && simState.state.is_terminal) {
       resetEpisode(elEpisodeSelect.value, currentLanguage).then(() => {
         isPlaying = true;
-        if (elPlayIcon) elPlayIcon.innerText = "⏸";
-        if (elPlayText) elPlayText.innerText = "Pause Walk";
-        if (elBtnPlay) {
-          elBtnPlay.classList.replace("bg-emerald-600", "bg-amber-600");
-          elBtnPlay.classList.replace("hover:bg-emerald-500", "hover:bg-amber-500");
-        }
+        if (elPlayIcon) elPlayIcon.innerHTML = ICON_PAUSE;
+        if (elPlayText) elPlayText.innerText = "Pause";
+        if (elBtnPlay) elBtnPlay.classList.add("is-playing");
         stepSimulation();
       });
       return;
     }
 
     isPlaying = true;
-    if (elPlayIcon) elPlayIcon.innerText = "⏸";
-    if (elPlayText) elPlayText.innerText = "Pause Walk";
-    if (elBtnPlay) {
-      elBtnPlay.classList.replace("bg-emerald-600", "bg-amber-600");
-      elBtnPlay.classList.replace("hover:bg-emerald-500", "hover:bg-amber-500");
-    }
+    if (elPlayIcon) elPlayIcon.innerHTML = ICON_PAUSE;
+    if (elPlayText) elPlayText.innerText = "Pause";
+    if (elBtnPlay) elBtnPlay.classList.add("is-playing");
     stepSimulation();
   }
 
@@ -742,12 +734,9 @@
     isPlaying = false;
     clearTimeout(playTimer);
     playTimer = null;
-    if (elPlayIcon) elPlayIcon.innerText = "▶";
-    if (elPlayText) elPlayText.innerText = "Auto Walk to Destination";
-    if (elBtnPlay) {
-      elBtnPlay.classList.replace("bg-amber-600", "bg-emerald-600");
-      elBtnPlay.classList.replace("hover:bg-amber-500", "hover:bg-emerald-500");
-    }
+    if (elPlayIcon) elPlayIcon.innerHTML = ICON_PLAY;
+    if (elPlayText) elPlayText.innerText = "Auto walk";
+    if (elBtnPlay) elBtnPlay.classList.remove("is-playing");
   }
 
   // Update UI with simulation state
@@ -759,11 +748,11 @@
     if (elEpisodeSelect) elEpisodeSelect.value = state.episode.id;
     if (elSplitBadge) {
       if (state.episode.is_unseen) {
-        elSplitBadge.innerText = "Val-Unseen (Zero-Shot)";
-        elSplitBadge.className = "px-2 py-0.5 text-[10px] font-semibold rounded bg-purple-950 text-purple-300 border border-purple-800";
+        elSplitBadge.innerText = "Val-Unseen · zero-shot";
+        elSplitBadge.className = "badge info";
       } else {
         elSplitBadge.innerText = "Val-Seen";
-        elSplitBadge.className = "px-2 py-0.5 text-[10px] font-semibold rounded bg-emerald-950 text-emerald-400 border border-emerald-800";
+        elSplitBadge.className = "badge ok";
       }
     }
 
@@ -799,10 +788,10 @@
     if (elDetectedLandmarks) {
       if (lms.length > 0) {
         elDetectedLandmarks.innerHTML = lms.map(lm =>
-          `<span class="text-[11px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded border border-cyan-800">${lm.replace(/_/g, " ")}</span>`
+          `<span class="tag">${lm.replace(/_/g, " ")}</span>`
         ).join(" ");
       } else {
-        elDetectedLandmarks.innerHTML = `<span class="text-xs text-slate-500 italic">No salient landmarks</span>`;
+        elDetectedLandmarks.innerHTML = `<span class="faint" style="font-size:12.5px">None detected</span>`;
       }
     }
 
@@ -827,13 +816,13 @@
     const applyBadge = (badgeEl) => {
       if (!badgeEl) return;
       if (rel.status === "UNRELIABLE") {
-        badgeEl.className = "px-2.5 py-0.5 text-[10px] font-bold rounded-full badge-unreliable";
+        badgeEl.className = "badge badge-unreliable";
         badgeEl.innerText = "UNRELIABLE";
       } else if (rel.status === "CAUTIOUS") {
-        badgeEl.className = "px-2.5 py-0.5 text-[10px] font-bold rounded-full badge-cautious";
+        badgeEl.className = "badge badge-cautious";
         badgeEl.innerText = "CAUTIOUS";
       } else {
-        badgeEl.className = "px-2.5 py-0.5 text-[10px] font-bold rounded-full badge-reliable";
+        badgeEl.className = "badge badge-reliable";
         badgeEl.innerText = "RELIABLE";
       }
     };
@@ -849,30 +838,24 @@
     }
 
     // 5. First-Person Viewport
-    if (elVpHeadingTag) elVpHeadingTag.innerText = `View Heading: ${state.state.heading}°`;
-    const icon = ROOM_ICONS[state.state.current_room] || "🏠";
-    if (elRoomIconContainer) elRoomIconContainer.innerText = icon;
+    if (elVpHeadingTag) elVpHeadingTag.innerText = `Heading ${state.state.heading}°`;
     if (elVpRoomName) elVpRoomName.innerText = state.state.current_room.replace(/_/g, " ");
-    if (elVpDesc) elVpDesc.innerText = `"${state.state.current_view_desc}"`;
+    if (elVpDesc) elVpDesc.innerText = state.state.current_view_desc;
 
-    if (elOverviewRoomIcon) elOverviewRoomIcon.innerText = icon;
     if (elOverviewRoomName) elOverviewRoomName.innerText = state.state.current_room.replace(/_/g, " ");
     if (elOverviewRoomTag) elOverviewRoomTag.innerText = state.state.current_room.replace(/_/g, " ");
-    if (elOverviewRoomDesc) elOverviewRoomDesc.innerText = `"${state.state.current_view_desc}"`;
+    if (elOverviewRoomDesc) elOverviewRoomDesc.innerText = state.state.current_view_desc;
 
     // Viewport candidate action arrows overlay
     if (elVpActionArrows) {
       elVpActionArrows.innerHTML = "";
       (state.candidates || []).forEach((c, idx) => {
         const btn = document.createElement("button");
-        btn.className = `px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition ${
-          c.is_selected
-            ? "bg-cyan-600 text-white ring-2 ring-cyan-300 shadow-md shadow-cyan-900"
-            : "bg-slate-900/90 hover:bg-slate-800 text-slate-300 border border-slate-700"
-        }`;
-        const arrowIcon = c.action_type === "STOP" ? "🛑" : (c.relative_heading < -15 ? "↖" : (c.relative_heading > 15 ? "↗" : "↑"));
-        const label = c.action_type === "STOP" ? "STOP" : `${arrowIcon} ${c.target_room} (${(c.probability * 100).toFixed(0)}%)`;
-        btn.innerHTML = label;
+        btn.className = `arrow-btn ${c.is_selected ? "selected" : ""}`;
+        const dir = c.action_type === "STOP" ? "stop" : (c.relative_heading < -15 ? "left" : (c.relative_heading > 15 ? "right" : "up"));
+        btn.innerHTML = c.action_type === "STOP"
+          ? `${ARROW.stop}<span>Stop</span>`
+          : `${ARROW[dir]}<span>${c.target_room.replace(/_/g, " ")}</span><span class="pct">${(c.probability * 100).toFixed(0)}%</span>`;
         btn.title = `Manual override: choose candidate ${idx}`;
         btn.onclick = () => stepSimulation(idx);
         elVpActionArrows.appendChild(btn);
@@ -891,38 +874,30 @@
         const isRecommended = (c.target_node === recommendedNextNode) || (c.action_type === "STOP" && currNodeIndex === refPath.length - 1);
         const isDeviation = !isRecommended && c.action_type !== "STOP";
 
-        item.className = `p-2.5 rounded-xl border transition cursor-pointer flex flex-col gap-1.5 candidate-row ${
-          c.is_selected
-            ? "bg-cyan-950/50 border-cyan-500/80 shadow-md shadow-cyan-950/40"
-            : (isRecommended ? "bg-emerald-950/30 border-emerald-800/60" : "bg-slate-900/70 border-slate-800 hover:border-slate-700")
-        }`;
+        item.className = `candidate-row ${c.is_selected ? "selected" : ""}`;
         item.onclick = () => stepSimulation(idx);
 
-        const headingLabel = c.action_type === "STOP" ? "Declare Destination" : `${c.relative_heading >= 0 ? "+" : ""}${c.relative_heading.toFixed(0)}° relative`;
-        const actionName = c.action_type === "STOP" ? "🛑 [STOP Action]" : `➡️ Move to ${c.target_room.replace(/_/g, " ")}`;
+        const headingLabel = c.action_type === "STOP" ? "Declare destination" : `${c.relative_heading >= 0 ? "+" : ""}${c.relative_heading.toFixed(0)}° relative`;
+        const actionName = c.action_type === "STOP" ? "Stop" : `Move to <span class="cap">${c.target_room.replace(/_/g, " ")}</span>`;
 
         let routeBadge = "";
-        if (isRecommended) {
-          routeBadge = '<span class="text-[10px] uppercase font-bold text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-800 flex items-center gap-1"><span>✅</span> Where to Go</span>';
-        } else if (isDeviation) {
-          routeBadge = '<span class="text-[10px] uppercase font-bold text-rose-400 bg-rose-950 px-2 py-0.5 rounded border border-rose-800 flex items-center gap-1"><span>⛔</span> Avoid</span>';
-        }
+        if (isRecommended) routeBadge = '<span class="badge ok">On route</span>';
+        else if (isDeviation) routeBadge = '<span class="badge bad">Avoid</span>';
 
+        const pct = (c.probability * 100).toFixed(1);
         item.innerHTML = `
-          <div class="flex items-center justify-between text-xs">
-            <div class="flex items-center gap-2">
-              <span class="font-bold ${c.is_selected ? "text-cyan-300" : (isRecommended ? "text-emerald-300" : "text-white")}">${actionName}</span>
-              <span class="text-[10px] text-slate-400 font-mono">(${headingLabel})</span>
+          <div class="top">
+            <div>
+              <div class="name">${actionName}</div>
+              <div class="sub">${headingLabel}</div>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="right">
               ${routeBadge}
-              ${c.is_selected ? '<span class="text-[10px] uppercase font-bold text-cyan-400 bg-cyan-950 px-1.5 py-0.5 rounded border border-cyan-800">Agent Choice</span>' : ''}
-              <span class="font-mono text-xs font-bold ${c.is_selected ? "text-cyan-300" : "text-slate-300"}">${(c.probability * 100).toFixed(1)}%</span>
+              ${c.is_selected ? '<span class="badge info">Agent choice</span>' : ''}
+              <span class="pct">${pct}%</span>
             </div>
           </div>
-          <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden border border-slate-800">
-            <div class="h-full rounded-full transition-all duration-300 ${c.is_selected ? "bg-cyan-400" : (isRecommended ? "bg-emerald-500" : "bg-slate-600")}" style="width: ${(c.probability * 100).toFixed(1)}%"></div>
-          </div>
+          <div class="meter ${isRecommended ? "ok" : (c.is_selected ? "" : "muted")}"><div style="width: ${pct}%"></div></div>
         `;
         elCandidatesList.appendChild(item);
       });
@@ -950,19 +925,19 @@
     if (elMetricSr) {
       if (state.state.is_terminal) {
         if (m.success) {
-          elMetricSr.innerText = "SUCCESS (100%)";
-          elMetricSr.className = "text-2xl font-black text-emerald-400 font-mono";
+          elMetricSr.innerText = "Success";
+          elMetricSr.className = "metric-value v-ok";
         } else {
-          elMetricSr.innerText = "FAILED (0%)";
-          elMetricSr.className = "text-2xl font-black text-rose-400 font-mono";
+          elMetricSr.innerText = "Failed";
+          elMetricSr.className = "metric-value v-bad";
         }
       } else {
-        elMetricSr.innerText = "In Progress";
-        elMetricSr.className = "text-2xl font-black text-amber-400 font-mono";
+        elMetricSr.innerText = "In progress";
+        elMetricSr.className = "metric-value v-warn";
       }
     }
 
-    if (elMetricSpl) elMetricSpl.innerText = state.state.is_terminal ? `${m.spl}%` : "--";
+    if (elMetricSpl) elMetricSpl.innerText = state.state.is_terminal ? `${m.spl}%` : "—";
     if (elMetricNdtw) elMetricNdtw.innerText = `${m.ndtw}%`;
     if (elMetricNe) elMetricNe.innerText = `${m.navigation_error} m`;
 
@@ -979,24 +954,15 @@
         const nodeData = (state.graph && state.graph.nodes) ? state.graph.nodes[nodeId] : null;
         const roomName = nodeData ? nodeData.room_type.replace(/_/g, " ") : nodeId;
 
-        row.className = `p-2 rounded-lg flex items-center justify-between border ${
-          isCurrent 
-            ? "bg-cyan-950/40 border-cyan-700/60 text-cyan-200" 
-            : "bg-slate-900/60 border-slate-800/80 text-slate-300"
-        }`;
+        row.className = `list-row ${isCurrent ? "current" : ""}`;
         row.innerHTML = `
-          <div class="flex items-center gap-2">
-            <span class="w-5 h-5 rounded-full flex items-center justify-center font-mono text-[10px] font-bold ${
-              isCurrent ? "bg-cyan-600 text-white" : (isStart ? "bg-blue-900 text-blue-300" : "bg-slate-800 text-slate-400")
-            }">
-              ${idx}
-            </span>
-            <span class="font-medium capitalize text-xs">${roomName}</span>
-            <span class="text-[10px] font-mono text-slate-500">(${nodeId})</span>
+          <div class="lead">
+            <span class="step-num ${isCurrent ? "current" : (isStart ? "start" : "")}">${idx}</span>
+            <span class="name">${roomName}</span>
+            <span class="id mono">${nodeId}</span>
           </div>
           <div>
-            ${isCurrent ? '<span class="text-[10px] bg-cyan-900/50 text-cyan-300 px-1.5 py-0.5 rounded font-bold">CURRENT</span>' : ''}
-            ${isStart ? '<span class="text-[10px] bg-blue-950 text-blue-400 px-1.5 py-0.5 rounded">START</span>' : ''}
+            ${isCurrent ? '<span class="badge info">Current</span>' : (isStart ? '<span class="badge">Start</span>' : '')}
           </div>
         `;
         elFloorplanHistoryList.appendChild(row);
@@ -1015,16 +981,16 @@
     const distToGoal = state.metrics && state.metrics.navigation_error !== undefined ? state.metrics.navigation_error : 0;
 
     if (elGmapEtaDist) {
-      elGmapEtaDist.innerText = `${distToGoal.toFixed(1)} m • ${remainingSteps} step${remainingSteps === 1 ? "" : "s"}`;
+      elGmapEtaDist.innerText = `${distToGoal.toFixed(1)} m · ${remainingSteps} step${remainingSteps === 1 ? "" : "s"}`;
     }
 
     const landmarkText = (state.episode.target_landmarks || [])[0] || state.episode.goal_node.replace(/.*_/, "");
     if (elGmapLandmarkPrompt) elGmapLandmarkPrompt.innerText = landmarkText;
 
     if (isAtGoal) {
-      if (elGmapTurnIcon) elGmapTurnIcon.innerText = "🏁";
-      elGmapPrimaryInst.innerText = `You have arrived at your destination: ${state.state.current_room.replace(/_/g, " ")}`;
-      if (elGmapSecondaryInst) elGmapSecondaryInst.innerHTML = `<span>Target landmark reached:</span> <strong class="underline">${landmarkText}</strong>`;
+      if (elGmapTurnIcon) elGmapTurnIcon.innerHTML = TURN.flag;
+      elGmapPrimaryInst.innerText = `You have arrived: ${state.state.current_room.replace(/_/g, " ")}`;
+      if (elGmapSecondaryInst) elGmapSecondaryInst.innerHTML = `<span>Landmark reached:</span> <strong>${landmarkText}</strong>`;
       return;
     }
 
@@ -1040,22 +1006,22 @@
         const targetBearing = (Math.atan2(dx, dy) * 180 / Math.PI + 360) % 360;
         const relAngle = angleDiff(state.state.heading, targetBearing);
 
-        let icon = "⬆";
-        let maneuver = "Head straight along";
+        let icon = "straight";
+        let maneuver = "head straight along";
         if (relAngle > 25) {
-          icon = "↱";
-          maneuver = "Turn right into";
+          icon = "right";
+          maneuver = "turn right into";
         } else if (relAngle < -25) {
-          icon = "↰";
-          maneuver = "Turn left into";
+          icon = "left";
+          maneuver = "turn left into";
         }
 
-        if (elGmapTurnIcon) elGmapTurnIcon.innerText = icon;
-        elGmapPrimaryInst.innerText = `In ${stepDist}m, ${maneuver} ${nextNode.room_type.replace(/_/g, " ")}`;
+        if (elGmapTurnIcon) elGmapTurnIcon.innerHTML = TURN[icon];
+        elGmapPrimaryInst.innerText = `In ${stepDist} m, ${maneuver} ${nextNode.room_type.replace(/_/g, " ")}`;
       }
     } else {
-      if (elGmapTurnIcon) elGmapTurnIcon.innerText = "↩";
-      elGmapPrimaryInst.innerText = `Recalculating: Follow blue route toward ${state.episode.goal_node.replace(/.*_/, "")}`;
+      if (elGmapTurnIcon) elGmapTurnIcon.innerHTML = TURN.back;
+      elGmapPrimaryInst.innerText = `Recalculating: follow the blue route toward ${state.episode.goal_node.replace(/.*_/, "")}`;
     }
   }
 
@@ -1072,29 +1038,23 @@
       const isGoal = idx === refPath.length - 1;
 
       const item = document.createElement("div");
-      item.className = `p-2 rounded-xl flex items-center justify-between border ${
-        isCurrent 
-          ? "bg-[#1a73e8]/20 border-[#4285f4] text-white shadow-sm ring-1 ring-[#4285f4]" 
-          : (isPast ? "bg-slate-900/40 border-slate-800 text-slate-400" : "bg-slate-900/80 border-slate-800 text-slate-200")
-      }`;
+      item.className = `list-row ${isCurrent ? "current" : (isPast ? "past" : "")}`;
 
-      const icon = isGoal ? "📍" : (isPast ? "✓" : `${idx + 1}`);
+      const mark = isPast
+        ? svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>', 12, 2.6)
+        : (isGoal ? svg('<path d="M5 21V4M5 4h12l-2 4 2 4H5"/>', 12, 2.2) : `${idx + 1}`);
 
       item.innerHTML = `
-        <div class="flex items-center gap-2">
-          <span class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-[11px] ${
-            isCurrent ? "bg-[#1a73e8] text-white" : (isPast ? "bg-emerald-950 text-emerald-400" : "bg-slate-800 text-slate-400")
-          }">
-            ${icon}
-          </span>
+        <div class="lead">
+          <span class="step-num ${isCurrent ? "current" : (isPast ? "done" : "")}">${mark}</span>
           <div>
-            <div class="font-semibold text-xs capitalize ${isCurrent ? "text-cyan-300 font-bold" : "text-white"}">${nodeData.room_type.replace(/_/g, " ")}</div>
-            <div class="text-[10px] text-slate-500 font-mono">${nodeId}</div>
+            <div class="name">${nodeData.room_type.replace(/_/g, " ")}</div>
+            <div class="id mono">${nodeId}</div>
           </div>
         </div>
         <div>
-          ${isCurrent ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-[#1a73e8] text-white font-bold">YOU ARE HERE</span>' : ''}
-          ${isGoal && !isCurrent ? '<span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800">DESTINATION</span>' : ''}
+          ${isCurrent ? '<span class="badge info">You are here</span>' : ''}
+          ${isGoal && !isCurrent ? '<span class="badge">Destination</span>' : ''}
         </div>
       `;
       elGmapRouteStepsContainer.appendChild(item);
@@ -1102,7 +1062,7 @@
   }
 
   // ==============================================================================
-  // GOOGLE MAPS RENDERING ENGINE (Authentic Google Maps Dark Palette & Visuals)
+  // FLOORPLAN RENDERING ENGINE (theme-aware)
   // ==============================================================================
   function renderGoogleMapToTarget(targetCtx, targetCanvas, timestamp) {
     if (!simState || !simState.graph || !targetCtx || !targetCanvas) return;
@@ -1129,11 +1089,11 @@
     const toCanvasY = (y) => H - (pad + ((y - minY) / spanY) * (H - 2 * pad));
 
     // Google Maps Dark background
-    targetCtx.fillStyle = "#1e2430";
+    targetCtx.fillStyle = PAL.bg;
     targetCtx.fillRect(0, 0, W, H);
 
     // Subtle Google Maps Grid Texture
-    targetCtx.strokeStyle = "rgba(255, 255, 255, 0.03)";
+    targetCtx.strokeStyle = PAL.grid;
     targetCtx.lineWidth = 1;
     const gridSize = 40;
     for (let gx = 0; gx < W; gx += gridSize) {
@@ -1170,7 +1130,7 @@
       targetCtx.beginPath();
       targetCtx.moveTo(ux, uy);
       targetCtx.lineTo(vx, vy);
-      targetCtx.strokeStyle = "#2e384d";
+      targetCtx.strokeStyle = PAL.roadEdge;
       targetCtx.lineWidth = W > 600 ? 18 : 14;
       targetCtx.lineCap = "round";
       targetCtx.stroke();
@@ -1179,7 +1139,7 @@
       targetCtx.beginPath();
       targetCtx.moveTo(ux, uy);
       targetCtx.lineTo(vx, vy);
-      targetCtx.strokeStyle = "#252d3d";
+      targetCtx.strokeStyle = PAL.road;
       targetCtx.lineWidth = W > 600 ? 14 : 10;
       targetCtx.lineCap = "round";
       targetCtx.stroke();
@@ -1202,8 +1162,8 @@
       targetCtx.moveTo(ux, uy);
       targetCtx.lineTo(vx, vy);
       targetCtx.setLineDash([5, 5]);
-      targetCtx.strokeStyle = "rgba(234, 67, 53, 0.75)";
-      targetCtx.lineWidth = 3;
+      targetCtx.strokeStyle = withAlpha(PAL.danger, 0.8);
+      targetCtx.lineWidth = 2;
       targetCtx.stroke();
       targetCtx.setLineDash([]);
 
@@ -1213,7 +1173,7 @@
 
       targetCtx.beginPath();
       targetCtx.arc(mx, my, 7, 0, 2 * Math.PI);
-      targetCtx.fillStyle = "#ea4335";
+      targetCtx.fillStyle = PAL.danger;
       targetCtx.fill();
       targetCtx.strokeStyle = "#ffffff";
       targetCtx.lineWidth = 1.5;
@@ -1237,17 +1197,17 @@
           const pt = nodes[refPath[i]];
           if (pt) targetCtx.lineTo(toCanvasX(pt.x), toCanvasY(pt.y));
         }
-        targetCtx.strokeStyle = "rgba(66, 133, 244, 0.4)";
+        targetCtx.strokeStyle = PAL.routeSoft;
         targetCtx.lineWidth = W > 600 ? 12 : 9;
         targetCtx.lineCap = "round";
         targetCtx.lineJoin = "round";
         targetCtx.stroke();
 
-        targetCtx.strokeStyle = "#4285F4";
+        targetCtx.strokeStyle = PAL.route;
         targetCtx.lineWidth = W > 600 ? 7 : 5;
         targetCtx.stroke();
 
-        targetCtx.strokeStyle = "#8ab4f8";
+        targetCtx.strokeStyle = "rgba(255, 255, 255, 0.35)";
         targetCtx.lineWidth = 2;
         targetCtx.stroke();
 
@@ -1290,12 +1250,10 @@
     const traj = simState.state.trajectory_nodes || [];
     if (traj.length >= 2) {
       targetCtx.beginPath();
-      targetCtx.strokeStyle = "#00e5ff";
-      targetCtx.lineWidth = 3.5;
+      targetCtx.strokeStyle = PAL.track;
+      targetCtx.lineWidth = 3;
       targetCtx.lineCap = "round";
       targetCtx.lineJoin = "round";
-      targetCtx.shadowColor = "rgba(0, 229, 255, 0.8)";
-      targetCtx.shadowBlur = 8;
       const startN = nodes[traj[0]];
       if (startN) {
         targetCtx.moveTo(toCanvasX(startN.x), toCanvasY(startN.y));
@@ -1316,7 +1274,7 @@
       const ageAlpha = Math.max(0.1, 0.7 - (animAgent.footsteps.length - fIdx) * 0.025);
       targetCtx.beginPath();
       targetCtx.arc(fx, fy, 2, 0, 2 * Math.PI);
-      targetCtx.fillStyle = `rgba(0, 229, 255, ${ageAlpha})`;
+      targetCtx.fillStyle = withAlpha(PAL.track, ageAlpha);
       targetCtx.fill();
     });
 
@@ -1325,29 +1283,28 @@
       const cx = toCanvasX(n.x);
       const cy = toCanvasY(n.y);
 
+      const isGoalNode = n.id === simState.episode.goal_node;
       targetCtx.beginPath();
-      targetCtx.arc(cx, cy, 13, 0, 2 * Math.PI);
-      targetCtx.fillStyle = "#1e293b";
+      targetCtx.arc(cx, cy, 9, 0, 2 * Math.PI);
+      targetCtx.fillStyle = PAL.node;
       targetCtx.fill();
-      targetCtx.strokeStyle = n.id === simState.episode.goal_node ? "#ea4335" : "#475569";
-      targetCtx.lineWidth = n.id === simState.episode.goal_node ? 3 : 2;
+      targetCtx.strokeStyle = isGoalNode ? PAL.danger : PAL.nodeEdge;
+      targetCtx.lineWidth = isGoalNode ? 2.5 : 1.75;
       targetCtx.stroke();
 
-      const icon = ROOM_ICONS[n.room_type] || "🏠";
-      targetCtx.font = "12px sans-serif";
-      targetCtx.textAlign = "center";
-      targetCtx.textBaseline = "middle";
-      targetCtx.fillText(icon, cx, cy + 1);
+      targetCtx.beginPath();
+      targetCtx.arc(cx, cy, 2.5, 0, 2 * Math.PI);
+      targetCtx.fillStyle = isGoalNode ? PAL.danger : PAL.nodeEdge;
+      targetCtx.fill();
 
-      targetCtx.fillStyle = "#e2e8f0";
-      targetCtx.font = "bold 10px -apple-system, BlinkMacSystemFont, sans-serif";
+      targetCtx.fillStyle = PAL.label;
+      targetCtx.font = '500 11px Inter, system-ui, sans-serif';
       targetCtx.textAlign = "center";
       targetCtx.textBaseline = "top";
-      const cleanName = n.room_type.replace(/_/g, " ");
-      targetCtx.fillText(cleanName, cx, cy + 16);
+      targetCtx.fillText(n.room_type.replace(/_/g, " "), cx, cy + 14);
     });
 
-    // 7. Draw Destination Pin (Authentic Google Maps Red Teardrop Marker 📍)
+    // 7. Draw Destination Pin (teardrop marker)
     const goalNode = nodes[simState.episode.goal_node];
     if (goalNode) {
       const gx = toCanvasX(goalNode.x);
@@ -1358,7 +1315,7 @@
 
       targetCtx.beginPath();
       targetCtx.ellipse(gx, gy + 3, 9, 3.5, 0, 0, 2 * Math.PI);
-      targetCtx.fillStyle = "rgba(0, 0, 0, 0.45)";
+      targetCtx.fillStyle = "rgba(0, 0, 0, 0.18)";
       targetCtx.fill();
 
       targetCtx.save();
@@ -1369,11 +1326,8 @@
       targetCtx.bezierCurveTo(11, -3, 0, 9, 0, 15);
       targetCtx.bezierCurveTo(0, 9, -11, -3, -11, -11);
       targetCtx.closePath();
-      targetCtx.fillStyle = "#ea4335";
-      targetCtx.shadowColor = "rgba(234, 67, 53, 0.7)";
-      targetCtx.shadowBlur = 8;
+      targetCtx.fillStyle = PAL.danger;
       targetCtx.fill();
-      targetCtx.shadowBlur = 0;
       targetCtx.strokeStyle = "#ffffff";
       targetCtx.lineWidth = 1.8;
       targetCtx.stroke();
@@ -1385,9 +1339,10 @@
 
       targetCtx.restore();
 
-      targetCtx.fillStyle = "#ea4335";
-      targetCtx.font = "bold 9px sans-serif";
+      targetCtx.fillStyle = PAL.danger;
+      targetCtx.font = '600 9px Inter, system-ui, sans-serif';
       targetCtx.textAlign = "center";
+      targetCtx.textBaseline = "alphabetic";
       targetCtx.fillText("DESTINATION", gx, pinY - 26);
     }
 
@@ -1400,7 +1355,7 @@
     const pulseAlpha = Math.max(0.1, 0.45 - (pulseRadius - 13) / 22);
     targetCtx.beginPath();
     targetCtx.arc(ax, ay, pulseRadius, 0, 2 * Math.PI);
-    targetCtx.fillStyle = `rgba(66, 133, 244, ${pulseAlpha})`;
+    targetCtx.fillStyle = withAlpha(PAL.route, pulseAlpha * 0.6);
     targetCtx.fill();
 
     const fovAngle = Math.PI / 3;
@@ -1410,18 +1365,15 @@
     targetCtx.arc(ax, ay, coneLen, headingRad - fovAngle / 2, headingRad + fovAngle / 2);
     targetCtx.closePath();
     const coneGrad = targetCtx.createRadialGradient(ax, ay, 4, ax, ay, coneLen);
-    coneGrad.addColorStop(0, "rgba(66, 133, 244, 0.65)");
-    coneGrad.addColorStop(1, "rgba(66, 133, 244, 0.0)");
+    coneGrad.addColorStop(0, withAlpha(PAL.route, 0.55));
+    coneGrad.addColorStop(1, withAlpha(PAL.route, 0));
     targetCtx.fillStyle = coneGrad;
     targetCtx.fill();
 
     targetCtx.beginPath();
     targetCtx.arc(ax, ay, 7.5, 0, 2 * Math.PI);
-    targetCtx.fillStyle = "#1a73e8";
-    targetCtx.shadowColor = "#1a73e8";
-    targetCtx.shadowBlur = 10;
+    targetCtx.fillStyle = PAL.route;
     targetCtx.fill();
-    targetCtx.shadowBlur = 0;
     targetCtx.strokeStyle = "#ffffff";
     targetCtx.lineWidth = 2.2;
     targetCtx.stroke();
@@ -1487,6 +1439,8 @@
         const nameEl = document.getElementById('user-display-name');
         if (nameEl && sess.username) {
           nameEl.textContent = sess.username;
+          const av = document.getElementById('user-avatar');
+          if (av) av.textContent = sess.username.trim().charAt(0) || 'R';
         }
       } catch (_) {}
     }
@@ -1498,6 +1452,9 @@
     sessionStorage.removeItem('rxr_session');
     window.location.href = 'login.html?logout=true';
   };
+
+  if (elPlayIcon) elPlayIcon.innerHTML = ICON_PLAY;
+  if (elGmapTurnIcon) elGmapTurnIcon.innerHTML = TURN.straight;
 
   // Start continuous 60fps render loop
   startAnimationLoop();

@@ -3,839 +3,537 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RxR Multilingual VLN Decision Agent</title>
+  <title>RxR Navigator · Multilingual VLN Decision Agent</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500;600&family=Noto+Sans+Telugu:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.tailwindcss.com"></script>
   <script>
-    // Auth Guard: ensure active session
-    (function() {
-      const sess = localStorage.getItem('rxr_session') || sessionStorage.getItem('rxr_session');
-      if (!sess) {
-        window.location.href = 'login.html';
-      }
+    // Theme (no flash) + auth guard
+    (function () {
+      var t = localStorage.getItem('rxr_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', t);
+      var sess = localStorage.getItem('rxr_session') || sessionStorage.getItem('rxr_session');
+      if (!sess) window.location.href = 'login.html';
     })();
   </script>
 </head>
-<body class="bg-[#070a12] text-slate-100 min-h-screen p-3 sm:p-5 flex flex-col gap-4">
+<body>
 
-  <!-- UNIFIED MINIMALIST TOP HEADER & GLOBAL NAVIGATION -->
-  <header class="glass-card px-4 py-3 flex flex-wrap items-center justify-between gap-3 border-white/5">
-    
-    <!-- Brand / Identity -->
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 border border-cyan-500/30 flex items-center justify-center text-xl shadow-lg shadow-cyan-950/40">
-        🧭
-      </div>
-      <div>
-        <div class="flex items-center gap-2">
-          <h1 class="text-sm sm:text-base font-bold tracking-tight text-white">
-            RxR Multilingual VLN
-          </h1>
-          <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 hidden sm:inline">
-            Decision Agent
-          </span>
-          <span id="split-badge" class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
-            Val-Seen
-          </span>
-          <span id="reliability-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-full badge-reliable">
-            RELIABLE
-          </span>
+  <!-- ===================================================== -->
+  <!-- Top bar                                                -->
+  <!-- ===================================================== -->
+  <header class="topbar">
+    <div class="topbar-inner">
+
+      <div class="brand">
+        <div class="brand-mark">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></svg>
         </div>
-        <p class="text-[11px] text-slate-400 mt-0.5 hidden md:block">
-          Google Room-Across-Room Benchmark &bull; Cross-Modal Policy
-        </p>
-      </div>
-    </div>
-
-    <!-- Center: Dedicated Section Switcher Tabs -->
-    <nav class="flex items-center gap-1 bg-slate-900/60 p-1 rounded-xl border border-white/5 overflow-x-auto">
-      <button id="tab-action" onclick="switchTab('action')" class="workspace-tab active">
-        <span>🎯</span>
-        <span>Action Studio</span>
-      </button>
-      <button id="tab-floorplan" onclick="switchTab('floorplan')" class="workspace-tab">
-        <span>🗺️</span>
-        <span>Google Maps</span>
-      </button>
-      <button id="tab-uncertainty" onclick="switchTab('uncertainty')" class="workspace-tab">
-        <span>🛡️</span>
-        <span>Safety &amp; Risk</span>
-      </button>
-      <button id="tab-benchmark" onclick="switchTab('benchmark')" class="workspace-tab">
-        <span>📊</span>
-        <span>Analytics</span>
-      </button>
-      <button id="tab-overview" onclick="switchTab('overview')" class="workspace-tab">
-        <span>📑</span>
-        <span>Overview</span>
-      </button>
-    </nav>
-
-    <!-- Right Controls: Episode, Language, Pace & User -->
-    <div class="flex items-center gap-2.5 flex-wrap">
-      
-      <!-- Episode Selector -->
-      <div class="flex items-center gap-1.5 bg-slate-900/80 px-2.5 py-1.5 rounded-xl border border-white/5">
-        <label for="episode-select" class="text-[11px] text-slate-400 font-medium">Ep:</label>
-        <select id="episode-select" class="bg-transparent text-xs font-semibold text-cyan-300 focus:outline-none cursor-pointer">
-          <option value="rxr_seen1_ep01" class="bg-slate-900 text-white">Seen 01: Kitchen (Duplex)</option>
-          <option value="rxr_seen1_ep02" class="bg-slate-900 text-white">Seen 01: Balcony</option>
-          <option value="rxr_seen1_ep03" class="bg-slate-900 text-white">Seen 01: Master Bath</option>
-          <option value="rxr_seen2_ep01" class="bg-slate-900 text-white">Seen 02: Tea Lounge (Villa)</option>
-          <option value="rxr_unseen1_ep01" class="bg-slate-900 text-white">Unseen 01: Terrace (Apartment)</option>
-          <option value="rxr_unseen1_ep02" class="bg-slate-900 text-white">Unseen 01: Home Office</option>
-          <option value="rxr_unseen2_ep01" class="bg-slate-900 text-white">Unseen 02: Roof Deck (Penthouse)</option>
-        </select>
-      </div>
-
-      <!-- Language Selector -->
-      <div class="flex items-center bg-slate-900/80 p-0.5 rounded-xl border border-white/5 text-xs">
-        <button id="lang-en" class="lang-btn px-2.5 py-1 rounded-lg font-medium bg-cyan-600 text-white shadow-sm">
-          EN
-        </button>
-        <button id="lang-hi" class="lang-btn px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white">
-          हिंदी
-        </button>
-        <button id="lang-te" class="lang-btn px-2.5 py-1 rounded-lg font-medium text-slate-400 hover:text-white">
-          తెలుగు
-        </button>
-      </div>
-
-      <!-- Pace & Step Live Indicator -->
-      <div class="hidden xl:flex items-center gap-2 bg-slate-900/80 px-2.5 py-1.5 rounded-xl border border-white/5 text-xs">
-        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
-        <span id="top-pace-text" class="font-mono text-cyan-300 font-semibold">1.1 m/s</span>
-        <span class="text-slate-600">&bull;</span>
-        <span id="step-counter" class="font-mono text-slate-300">Step: 0 / 15</span>
-      </div>
-
-      <!-- User Profile & Sign Out -->
-      <div class="flex items-center gap-1.5 pl-1.5 border-l border-slate-800">
-        <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900/80 border border-white/5 text-xs">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-          <span id="user-display-name" class="font-medium text-slate-200">Researcher</span>
+        <div>
+          <div class="brand-name">RxR Navigator</div>
+          <div class="brand-sub">Multilingual VLN Decision Agent</div>
         </div>
-        <button 
-          id="btn-logout" 
-          onclick="logout()" 
-          class="p-1.5 rounded-xl bg-slate-900/80 hover:bg-rose-950/60 hover:text-rose-300 text-slate-400 border border-white/5 transition flex items-center justify-center group" 
-          title="Sign Out"
-        >
-          <svg class="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-          </svg>
-        </button>
       </div>
 
+      <nav class="tabs" aria-label="Workspace">
+        <button id="tab-action" onclick="switchTab('action')" class="tab active">Studio</button>
+        <button id="tab-floorplan" onclick="switchTab('floorplan')" class="tab">Floorplan</button>
+        <button id="tab-uncertainty" onclick="switchTab('uncertainty')" class="tab">Reliability</button>
+        <button id="tab-benchmark" onclick="switchTab('benchmark')" class="tab">Benchmark</button>
+        <button id="tab-overview" onclick="switchTab('overview')" class="tab">Overview</button>
+      </nav>
+
+      <div class="topbar-right">
+        <div class="seg" role="group" aria-label="Instruction language">
+          <button id="lang-en" class="lang-btn active">EN</button>
+          <button id="lang-hi" class="lang-btn">हिंदी</button>
+          <button id="lang-te" class="lang-btn">తెలుగు</button>
+        </div>
+
+        <button id="btn-theme" class="btn btn-ghost btn-icon" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">
+          <svg id="theme-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+        </button>
+
+        <div class="user">
+          <div class="avatar" id="user-avatar">R</div>
+          <span id="user-display-name" class="user-name">Researcher</span>
+          <button id="btn-logout" onclick="logout()" class="btn btn-ghost btn-icon btn-sm" title="Sign out" aria-label="Sign out">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          </button>
+        </div>
+      </div>
     </div>
   </header>
 
-  <!-- ======================================================== -->
-  <!-- SECTION 1: ACTION & DECISION STUDIO (Spacious & Clean) -->
-  <!-- ======================================================== -->
-  <main id="section-action" class="flex flex-col gap-4">
+  <div class="page">
 
-    <!-- Synchronized Live Navigation Lyrics & AI Voice Narration Card -->
-    <div class="glass-card p-4 sm:p-5 flex flex-col gap-3">
-      <div class="flex items-center justify-between flex-wrap gap-2">
-        <div class="flex items-center gap-3">
-          <div class="flex items-center gap-2 px-3 py-1 rounded-xl bg-cyan-950/60 border border-cyan-800/50 text-cyan-300 text-xs font-semibold">
-            <span>🎵</span>
-            <span>Live Navigation Lyrics</span>
-          </div>
-
-          <!-- Animated Audio Equalizer when AI voice speaks -->
-          <div id="ai-voice-equalizer" class="audio-equalizer hidden">
-            <span class="audio-bar"></span>
-            <span class="audio-bar"></span>
-            <span class="audio-bar"></span>
-            <span class="audio-bar"></span>
-          </div>
-          <span id="ai-voice-status" class="text-xs text-cyan-400 font-medium hidden">
-            Speaking turn instruction...
-          </span>
-        </div>
-
-        <div class="flex items-center gap-3 text-xs">
-          <!-- AI Voice Toggle Button -->
-          <button id="btn-toggle-voice" onclick="toggleVoiceNarration()" class="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-emerald-400 border border-emerald-800/50 font-semibold transition" title="Toggle AI Voice Speech Narration">
-            <span id="voice-icon">🔊</span>
-            <span id="voice-status-text">AI Voice: ON</span>
-          </button>
-          <span class="text-slate-400 hidden sm:inline">Target: <strong id="target-room" class="text-slate-200 capitalize font-semibold">kitchen</strong></span>
-          <span class="text-slate-400 hidden md:inline">Landmarks: <strong id="target-lms" class="text-cyan-300 font-semibold">refrigerator</strong></span>
-        </div>
-      </div>
-
-      <!-- Live Lyrics Scrollable Container (Apple Music / Spotify Style) -->
-      <div id="live-lyrics-container" class="lyrics-container p-3 sm:p-4 bg-slate-950/60 rounded-xl border border-white/5">
-        <div class="text-xs text-slate-500 p-2">Initializing synchronized navigation lyrics...</div>
-      </div>
-    </div>
-
-    <!-- Viewport & Action Candidates Two-Column Studio -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-
-      <!-- LEFT: First-Person Heading Viewport with Map Toggle (7 Cols) -->
-      <div class="lg:col-span-7 flex flex-col gap-4">
-        <div class="glass-card p-4 sm:p-5 flex flex-col gap-4 flex-1">
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-2.5">
-              <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                First-Person Heading Viewport
-              </span>
-              <span id="viewport-heading-tag" class="text-xs font-mono text-cyan-400 bg-slate-900/90 px-2.5 py-0.5 rounded-lg border border-white/5">
-                View Heading: 0&deg;
-              </span>
-            </div>
-            
-            <!-- View Mode Switcher: Camera vs Embedded Google Map -->
-            <div class="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-white/5 text-xs">
-              <button id="view-mode-camera" onclick="switchStudioView('camera')" class="px-2.5 py-1 rounded-lg font-semibold bg-cyan-600 text-white transition">
-                📷 Camera View
-              </button>
-              <button id="view-mode-map" onclick="switchStudioView('map')" class="px-2.5 py-1 rounded-lg font-semibold text-slate-400 hover:text-white transition">
-                🗺️ Google Map
-              </button>
-            </div>
-          </div>
-
-          <!-- Panoramic Canvas Stage (Camera View) -->
-          <div id="viewport-stage" class="relative w-full h-80 bg-gradient-to-b from-slate-950 via-[#0d1424] to-slate-950 rounded-2xl border border-white/5 overflow-hidden flex flex-col items-center justify-center p-6 shadow-inner">
-            <!-- Horizon & Compass Overlay -->
-            <div class="absolute inset-0 opacity-20 pointer-events-none flex flex-col justify-between p-4">
-              <div class="flex justify-between text-xs text-slate-400 font-mono">
-                <span>W (270&deg;)</span>
-                <span>NW (315&deg;)</span>
-                <span>N (0&deg;)</span>
-                <span>NE (45&deg;)</span>
-                <span>E (90&deg;)</span>
-              </div>
-              <div class="w-full border-b border-dashed border-cyan-500/40"></div>
-              <div class="flex justify-between text-[11px] text-slate-500 font-mono">
-                <span>Ground Plane Perspective</span>
-                <span>Panoramic Heading Sensor</span>
-              </div>
-            </div>
-
-            <!-- Horizon Room Illustration -->
-            <div class="relative z-10 flex flex-col items-center text-center gap-2">
-              <div id="room-icon-container" class="w-20 h-20 rounded-2xl bg-cyan-950/60 border border-cyan-500/30 flex items-center justify-center text-4xl shadow-xl shadow-cyan-950/60">
-                🏠
-              </div>
-              <h3 id="vp-room-name" class="text-xl font-bold text-white capitalize tracking-tight">Hallway</h3>
-              <p id="vp-description" class="text-xs text-slate-300 max-w-md px-4 leading-relaxed">
-                Ahead is the open hallway leading deeper into the house
-              </p>
-            </div>
-
-            <!-- Direction Overlay Buttons -->
-            <div id="viewport-action-arrows" class="absolute bottom-4 inset-x-4 flex justify-center gap-2 z-20">
-              <!-- Dynamically populated candidate action arrows -->
-            </div>
-          </div>
-
-          <!-- Embedded Google Map Stage (When toggled to Map mode in Action Studio) -->
-          <div id="studio-map-stage" class="hidden relative w-full h-80 bg-[#101726] rounded-2xl border border-white/5 overflow-hidden flex items-center justify-center p-3 shadow-inner">
-            <canvas id="studio-canvas" width="600" height="300" class="max-w-full h-auto rounded-xl cursor-pointer" title="Click any node to choose destination"></canvas>
-            <div class="absolute top-3 right-3 px-2.5 py-1 rounded-xl bg-black/70 backdrop-blur-md text-xs text-cyan-300 border border-white/10 font-medium">
-              Click any room node to route 📍
-            </div>
-          </div>
-
-          <!-- Perception Metadata: Heading, Distance & Landmarks -->
-          <div class="grid grid-cols-3 gap-3 text-xs">
-            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5">
-              <span class="text-slate-400 block text-[11px] font-medium">Heading Orientation</span>
-              <span id="heading-text" class="text-sm font-semibold text-white mt-0.5 block">0.0&deg; (North)</span>
-            </div>
-            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5">
-              <span class="text-slate-400 block text-[11px] font-medium">Distance Traversed</span>
-              <span id="distance-text" class="text-sm font-semibold text-cyan-300 font-mono mt-0.5 block">0.0 m</span>
-            </div>
-            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5">
-              <span class="text-slate-400 block text-[11px] font-medium">Visual Landmarks</span>
-              <div id="detected-landmarks" class="flex flex-wrap gap-1 mt-1">
-                <span class="text-[11px] bg-cyan-950/60 text-cyan-300 px-2 py-0.5 rounded-lg border border-cyan-800/50">door</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- RIGHT: Instruction-Conditioned Action Candidates (5 Cols) -->
-      <div class="lg:col-span-5 flex flex-col gap-4">
-        <div class="glass-card p-4 sm:p-5 flex flex-col gap-3.5 flex-1">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
-              Action Policy Distribution $\pi(a_t \mid s_t, I)$
-            </span>
-            <span class="text-[11px] font-medium text-cyan-400 bg-cyan-950/60 px-2 py-0.5 rounded-lg border border-cyan-800/40">
-              Interactive
-            </span>
-          </div>
-
-          <p class="text-xs text-slate-400 leading-relaxed">
-            Green badges indicate the <strong class="text-emerald-400">optimal next step</strong> to destination; red badges mark <strong class="text-rose-400">path deviations ⛔</strong>:
-          </p>
-
-          <!-- Candidate Actions List -->
-          <div id="candidates-list" class="flex flex-col gap-2.5 overflow-y-auto max-h-80 pr-1">
-            <!-- Dynamically populated candidate action bars -->
-          </div>
-
-          <!-- Decision Stats (Entropy & Confidence in Studio) -->
-          <div class="mt-auto pt-3 border-t border-white/5 grid grid-cols-2 gap-3 text-xs">
-            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5">
-              <div class="flex justify-between items-center text-xs mb-1.5">
-                <span class="text-slate-400 font-medium">Policy Entropy:</span>
-                <span id="studio-entropy-value" class="font-mono text-cyan-300 font-bold">0.32</span>
-              </div>
-              <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
-                <div id="studio-entropy-bar" class="bg-cyan-500 h-full rounded-full transition-all duration-300" style="width: 25%"></div>
-              </div>
-            </div>
-            <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5">
-              <div class="flex justify-between items-center text-xs mb-1.5">
-                <span class="text-slate-400 font-medium">Top Confidence:</span>
-                <span id="studio-conf-value" class="font-mono text-emerald-400 font-bold">84.2%</span>
-              </div>
-              <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
-                <div id="studio-conf-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width: 84%"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- Execution Cockpit Toolbar -->
-    <div class="glass-card p-4 flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center gap-2">
-        <button id="btn-reset" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl text-xs font-semibold transition border border-white/10 flex items-center gap-2">
-          <span>↺</span>
-          <span>Reset</span>
-        </button>
-        <button id="btn-backtrack" class="px-4 py-2.5 bg-amber-950/40 hover:bg-amber-900/60 text-amber-300 rounded-xl text-xs font-semibold transition border border-amber-800/50 flex items-center gap-2">
-          <span>↩</span>
-          <span>Backtrack</span>
-        </button>
-      </div>
-
-      <div class="flex items-center gap-3">
-        <button id="btn-step" class="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-cyan-900/40 flex items-center gap-2">
-          <span>Walk Next Step</span>
-          <span>&rarr;</span>
-        </button>
-        <button id="btn-play" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-900/40 flex items-center gap-2">
-          <span id="play-icon">▶</span>
-          <span id="play-text">Auto Walk to Destination</span>
-        </button>
-      </div>
-
-      <div class="flex items-center gap-2 text-xs">
-        <span class="text-slate-400 font-medium">Movement Pace:</span>
-        <select id="speed-select" class="bg-slate-900/90 border border-white/10 text-xs text-white rounded-xl px-3 py-2 font-medium focus:outline-none">
-          <option value="1600" selected>🚶 Walking Pace (Slow &bull; 1.0 m/s)</option>
-          <option value="900">🚶‍♂️ Normal Pace (1.8 m/s)</option>
-          <option value="450">🏃 Brisk Pace (3.0 m/s)</option>
-        </select>
-      </div>
-    </div>
-  </main>
-
-  <!-- ======================================================== -->
-  <!-- SECTION 2: GOOGLE MAPS NAVIGATION & TOPOLOGICAL FLOORPLAN -->
-  <!-- ======================================================== -->
-  <section id="section-floorplan" class="hidden flex flex-col gap-4">
-
-    <!-- GOOGLE MAPS DESTINATION SEARCH & LOCATION PICKER BAR -->
-    <div class="glass-card p-4 flex flex-wrap items-center justify-between gap-3 border-cyan-900/40 bg-slate-900/70">
-      <div class="flex items-center gap-3 flex-1 min-w-[280px]">
-        <!-- Origin -->
-        <div class="flex items-center gap-2 bg-slate-950/80 px-3 py-2 rounded-xl border border-white/5 text-xs">
-          <span class="w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-white"></span>
-          <span class="text-slate-400">From:</span>
-          <span id="gmap-search-from" class="font-bold text-white capitalize">Hallway</span>
-        </div>
-
-        <span class="text-slate-500 font-bold">&rarr;</span>
-
-        <!-- Destination Selector -->
-        <div class="flex items-center gap-2 bg-slate-950/80 px-3 py-2 rounded-xl border border-cyan-800/60 text-xs flex-1 max-w-sm">
-          <span class="text-rose-400 text-sm">📍</span>
-          <span class="text-slate-400">To:</span>
-          <select id="destination-select" onchange="onSelectDestination(this.value)" class="bg-transparent font-bold text-cyan-300 focus:outline-none cursor-pointer flex-1 capitalize">
-            <!-- Populated dynamically with all rooms in the environment -->
+    <!-- Episode & status strip -->
+    <div class="statusbar">
+      <div class="statusbar-group">
+        <div class="field">
+          <label for="episode-select">Episode</label>
+          <select id="episode-select">
+            <option value="rxr_seen1_ep01">Seen 01 · Kitchen (Duplex)</option>
+            <option value="rxr_seen1_ep02">Seen 01 · Balcony</option>
+            <option value="rxr_seen1_ep03">Seen 01 · Master Bath</option>
+            <option value="rxr_seen2_ep01">Seen 02 · Tea Lounge (Villa)</option>
+            <option value="rxr_unseen1_ep01">Unseen 01 · Terrace (Apartment)</option>
+            <option value="rxr_unseen1_ep02">Unseen 01 · Home Office</option>
+            <option value="rxr_unseen2_ep01">Unseen 02 · Roof Deck (Penthouse)</option>
           </select>
         </div>
-
-        <button id="btn-show-way" onclick="calculateAndShowRoute()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs transition flex items-center gap-1.5 shadow-md shadow-blue-900/50">
-          <span>🗺️ Show Route</span>
-        </button>
+        <span id="split-badge" class="badge ok">Val-Seen</span>
+        <span id="reliability-badge" class="badge badge-reliable">RELIABLE</span>
       </div>
-
-      <!-- Quick Location Chips -->
-      <div class="flex items-center gap-1.5 overflow-x-auto py-1 text-xs" id="quick-location-chips">
-        <!-- Populated dynamically with room chips (Kitchen, Balcony, Living, etc.) -->
+      <div class="statusbar-group muted" style="font-size:13px;gap:14px">
+        <span style="display:inline-flex;align-items:center;gap:8px"><span class="dot live"></span><span id="top-pace-text" class="num" style="font-weight:600;color:var(--text)">1.1 m/s</span></span>
+        <span id="step-counter" class="num">Step: 0 / 15</span>
       </div>
     </div>
 
-    <!-- Google Maps Green Turn-by-Turn Navigation Header Banner -->
-    <div id="gmap-banner" class="gmap-nav-banner p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center gap-4">
-        <div id="gmap-turn-icon" class="gmap-nav-turn-icon">
-          ⬆
-        </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-md bg-black/25 text-white/95">
-              Google Maps Turn-by-Turn Guidance
-            </span>
-            <span id="gmap-status-pill" class="text-[10px] font-semibold px-2 py-0.5 rounded-md bg-white/20 text-white">
-              Fastest Route (94.7% Match)
-            </span>
+    <!-- ===================================================== -->
+    <!-- STUDIO                                                 -->
+    <!-- ===================================================== -->
+    <main id="section-action" class="stack">
+
+      <!-- Instruction -->
+      <div class="card">
+        <div class="card-head">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div>
+              <div class="card-title">Instruction</div>
+              <div class="card-sub">Target <strong id="target-room" class="cap" style="color:var(--text);font-weight:600">kitchen</strong> &middot; Landmarks <strong id="target-lms" style="color:var(--text);font-weight:600">refrigerator</strong></div>
+            </div>
+            <div id="ai-voice-equalizer" class="eq hidden"><span></span><span></span><span></span><span></span></div>
+            <span id="ai-voice-status" class="badge info hidden">Speaking…</span>
           </div>
-          <h2 id="gmap-primary-instruction" class="text-base sm:text-xl font-bold tracking-tight text-white mt-1">
-            Head north on Hallway corridor toward Kitchen
-          </h2>
-          <p id="gmap-secondary-instruction" class="text-xs text-emerald-100/90 mt-1 flex items-center gap-1">
-            <span>Landmark ahead:</span> <strong id="gmap-landmark-prompt" class="underline">refrigerator</strong>
-          </p>
+          <button id="btn-toggle-voice" onclick="toggleVoiceNarration()" class="btn btn-sm" title="Toggle voice narration">
+            <span id="voice-icon" class="dot ok"></span>
+            <span id="voice-status-text">Voice on</span>
+          </button>
+        </div>
+        <div id="live-lyrics-container" class="lyrics-container">
+          <div class="faint" style="padding:10px 12px;font-size:13px">Loading instruction…</div>
         </div>
       </div>
 
-      <!-- Live Navigation Telemetry & ETA HUD -->
-      <div class="flex items-center gap-4 bg-black/25 px-4 py-2.5 rounded-2xl border border-white/20 text-xs">
-        <div class="text-right">
-          <div class="text-[10px] text-emerald-200 uppercase font-medium">Remaining to Goal</div>
-          <div id="gmap-eta-dist" class="font-mono font-bold text-white text-sm sm:text-base">6.8 m &bull; 2 steps</div>
-        </div>
-        <div class="h-8 w-[1px] bg-white/20"></div>
-        <div>
-          <div class="text-[10px] text-emerald-200 uppercase font-medium">Walking Speed</div>
-          <div id="gmap-live-speed" class="font-mono font-bold text-emerald-300 text-sm sm:text-base">1.1 m/s</div>
-        </div>
-      </div>
-    </div>
+      <div class="grid g-12">
 
-    <!-- Map Canvas & Navigation Sidebar -->
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-
-      <!-- Google Maps Canvas Stage (8 Cols) -->
-      <div class="lg:col-span-8 flex flex-col gap-4">
-        <div class="glass-card p-4 sm:p-5 flex flex-col gap-3 relative overflow-hidden">
-
-          <!-- Google Maps Route Guidance Legend Bar -->
-          <div class="flex flex-wrap items-center justify-between gap-3 text-xs pb-2 border-b border-white/5">
-            <div class="flex items-center gap-4">
-              <span class="flex items-center gap-1.5 font-bold text-cyan-400">
-                <span class="w-3.5 h-1.5 bg-[#4285F4] inline-block rounded shadow-sm"></span>
-                <span>Where to Go (Recommended Route)</span>
-              </span>
-              <span class="flex items-center gap-1.5 font-bold text-rose-400">
-                <span class="w-3.5 h-1 border-b-2 border-dashed border-[#ea4335] inline-block"></span>
-                <span>Where NOT to Go (Deviations ⛔)</span>
-              </span>
-            </div>
-            <div class="flex items-center gap-3 text-[11px] text-slate-400">
-              <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#1a73e8] inline-block ring-2 ring-white"></span> You (Puck)</span>
-              <span class="flex items-center gap-1">📍 Destination Pin (Click node to change)</span>
-            </div>
-          </div>
-
-          <!-- Canvas Container -->
-          <div class="w-full bg-[#121826] rounded-2xl border border-white/5 flex items-center justify-center p-3 relative shadow-inner overflow-hidden">
-            <canvas id="graph-canvas" width="760" height="460" class="max-w-full h-auto rounded-xl cursor-pointer" title="Click any node to navigate there"></canvas>
-
-            <!-- Floating Pace Speedometer HUD in bottom-left corner of canvas -->
-            <div class="absolute bottom-5 left-5 gmap-speed-hud px-3.5 py-2.5 flex items-center gap-3 text-xs text-white z-20">
-              <div class="w-9 h-9 rounded-full bg-cyan-600/30 border border-cyan-400/50 flex items-center justify-center text-base">
-                🚶
+        <!-- Viewport -->
+        <div class="c-7">
+          <div class="card" style="height:100%">
+            <div class="card-head">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span class="card-title">Viewport</span>
+                <span id="viewport-heading-tag" class="badge mono">Heading 0°</span>
               </div>
-              <div>
-                <div class="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Motion Pace</div>
-                <div id="hud-speedometer-val" class="font-mono font-bold text-cyan-300 text-xs">
-                  Walking: 1.1 m/s
+              <div class="seg">
+                <button id="view-mode-camera" onclick="switchStudioView('camera')" class="active">Camera</button>
+                <button id="view-mode-map" onclick="switchStudioView('map')">Map</button>
+              </div>
+            </div>
+
+            <div id="viewport-stage" class="stage">
+              <div class="stage-ticks"><span>W</span><span>NW</span><span>N</span><span>NE</span><span>E</span></div>
+              <div class="stage-horizon"></div>
+              <div class="stage-center">
+                <div id="room-icon-container" class="stage-icon">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>
+                </div>
+                <h3 id="vp-room-name" class="stage-title">Hallway</h3>
+                <p id="vp-description" class="stage-desc">Ahead is the open hallway leading deeper into the house</p>
+              </div>
+              <div id="viewport-action-arrows" class="stage-arrows"></div>
+            </div>
+
+            <div id="studio-map-stage" class="hidden map-wrap" style="height:320px">
+              <canvas id="studio-canvas" width="600" height="300" title="Click a room to set it as the destination"></canvas>
+              <div class="map-hint">Click a room to route</div>
+            </div>
+
+            <div class="grid g-3" style="gap:12px">
+              <div class="well">
+                <div class="kv-label">Heading</div>
+                <div id="heading-text" class="kv-value num">0.0°</div>
+              </div>
+              <div class="well">
+                <div class="kv-label">Distance</div>
+                <div id="distance-text" class="kv-value num">0.0 m</div>
+              </div>
+              <div class="well">
+                <div class="kv-label">Landmarks</div>
+                <div id="detected-landmarks" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">
+                  <span class="tag">door</span>
                 </div>
               </div>
-              <div class="h-6 w-[1px] bg-slate-700"></div>
-              <div class="text-[11px]">
-                <span class="text-slate-400">Target:</span> <strong id="hud-next-room" class="text-white capitalize font-semibold">Kitchen</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Policy -->
+        <div class="c-5">
+          <div class="card" style="height:100%">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Action policy</div>
+                <div class="card-sub">π(aₜ | sₜ, I) &middot; select a candidate to override</div>
               </div>
             </div>
 
-            <!-- Floating Google Maps Navigation Controls (Re-center & Zoom) -->
-            <div class="absolute top-5 right-5 flex flex-col gap-2 z-20">
-              <button onclick="recenterMap()" class="w-9 h-9 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white border border-white/10 flex items-center justify-center shadow-lg transition" title="Re-center on Agent">
-                🎯
-              </button>
-              <button onclick="zoomMap(1.15)" class="w-9 h-9 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white border border-white/10 flex items-center justify-center shadow-lg transition font-bold" title="Zoom In">
-                +
-              </button>
-              <button onclick="zoomMap(0.85)" class="w-9 h-9 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-white border border-white/10 flex items-center justify-center shadow-lg transition font-bold" title="Zoom Out">
-                &minus;
-              </button>
+            <div id="candidates-list" class="list" style="max-height:332px"></div>
+
+            <div class="grid g-2" style="gap:12px;margin-top:auto">
+              <div class="well" style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span class="kv-label">Entropy</span>
+                  <span id="studio-entropy-value" class="num" style="font-weight:600">0.32</span>
+                </div>
+                <div class="meter"><div id="studio-entropy-bar" style="width:25%"></div></div>
+              </div>
+              <div class="well" style="display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;justify-content:space-between;align-items:baseline">
+                  <span class="kv-label">Confidence</span>
+                  <span id="studio-conf-value" class="num" style="font-weight:600">84.2%</span>
+                </div>
+                <div class="meter ok"><div id="studio-conf-bar" style="width:84%"></div></div>
+              </div>
             </div>
           </div>
-
-          <div class="flex items-center justify-between text-xs text-slate-400 px-1 pt-1">
-            <span class="text-cyan-400 font-medium">💡 Click on any room node on the map to set it as your destination and see the way!</span>
-            <span class="hidden sm:inline">Blue arrows indicate directional flow &bull; Red crosses mark deviations</span>
-          </div>
         </div>
       </div>
 
-      <!-- Route Traversal Telemetry & Turn Step List (4 Cols) -->
-      <div class="lg:col-span-4 flex flex-col gap-4">
-        <!-- Turn-by-Turn Route Steps -->
-        <div class="glass-card p-4 sm:p-5 flex flex-col gap-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
-              Navigation Route Itinerary
-            </span>
-            <span id="gmap-total-steps-badge" class="text-[11px] font-mono text-cyan-400 bg-slate-900 px-2.5 py-0.5 rounded-lg border border-white/5 font-semibold">
-              Optimal: 3 Steps
-            </span>
-          </div>
-
-          <div id="gmap-route-steps-container" class="flex flex-col gap-2 overflow-y-auto max-h-56 pr-1 text-xs">
-            <!-- Dynamically populated turn steps with Checkmarks / Active status -->
-          </div>
+      <!-- Controls -->
+      <div class="card tight" style="flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between">
+        <div style="display:flex;gap:8px">
+          <button id="btn-reset" class="btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 109-9 9.75 9.75 0 00-6.74 2.74L3 8M3 3v5h5"/></svg>
+            Reset
+          </button>
+          <button id="btn-backtrack" class="btn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 010 11H11"/></svg>
+            Backtrack
+          </button>
         </div>
 
-        <!-- Traversal History Log -->
-        <div class="glass-card p-4 sm:p-5 flex flex-col gap-3 flex-1">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
-              Visited Viewpoints Log
-            </span>
-            <span id="visited-count-tag" class="text-[11px] font-mono text-cyan-400 bg-slate-900 px-2.5 py-0.5 rounded-lg border border-white/5 font-semibold">
-              1 node
-            </span>
-          </div>
-
-          <div id="floorplan-history-list" class="flex flex-col gap-1.5 overflow-y-auto max-h-48 pr-1 text-xs">
-            <!-- Traversed nodes dynamically appended -->
-          </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button id="btn-step" class="btn">
+            Next step
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+          <button id="btn-play" class="btn btn-dark">
+            <span id="play-icon" style="display:inline-flex"></span>
+            <span id="play-text">Auto walk</span>
+          </button>
         </div>
 
-        <!-- Quick Controls in Floorplan -->
-        <div class="glass-card p-3.5 flex items-center justify-between gap-2.5">
-          <button onclick="document.getElementById('btn-step').click()" class="flex-1 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-md shadow-cyan-950/50">
-            <span>Walk Next Step</span>
-            <span>&rarr;</span>
-          </button>
-          <button onclick="document.getElementById('btn-play').click()" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 shadow-md shadow-emerald-950/50">
-            <span>Auto Walk</span>
-          </button>
-          <button onclick="document.getElementById('btn-backtrack').click()" class="px-3.5 py-2.5 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded-xl text-xs font-medium transition border border-white/5">
-            ↩ Revert
-          </button>
+        <div class="field">
+          <label for="speed-select">Pace</label>
+          <select id="speed-select">
+            <option value="1600" selected>Walking · 1.0 m/s</option>
+            <option value="900">Normal · 1.8 m/s</option>
+            <option value="450">Brisk · 3.0 m/s</option>
+          </select>
         </div>
       </div>
+    </main>
 
-    </div>
-  </section>
+    <!-- ===================================================== -->
+    <!-- FLOORPLAN                                              -->
+    <!-- ===================================================== -->
+    <section id="section-floorplan" class="hidden stack">
 
-  <!-- ======================================================== -->
-  <!-- SECTION 3: UNCERTAINTY & SAFETY DIAGNOSTICS -->
-  <!-- ======================================================== -->
-  <section id="section-uncertainty" class="hidden flex flex-col gap-4">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div class="card tight">
+        <div class="route-bar">
+          <div class="route-pill"><span class="k">From</span><strong id="gmap-search-from">Hallway</strong></div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          <div class="route-pill" style="border-color:var(--accent)">
+            <span class="k">To</span>
+            <select id="destination-select" onchange="onSelectDestination(this.value)"></select>
+          </div>
+          <button id="btn-show-way" onclick="calculateAndShowRoute()" class="btn btn-primary">Show route</button>
+        </div>
+        <div id="quick-location-chips" class="chip-row"></div>
+      </div>
 
-      <!-- Diagnostic Metrics (5 Cols) -->
-      <div class="lg:col-span-5 flex flex-col gap-4">
-        <div class="glass-card p-5 sm:p-6 flex flex-col gap-4">
-          <div class="flex items-center justify-between">
+      <!-- Guidance -->
+      <div id="gmap-banner" class="card">
+        <div class="guidance">
+          <div class="guidance-main">
+            <div id="gmap-turn-icon" class="turn-icon"></div>
+            <div style="min-width:0">
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <span class="eyebrow">Route guidance</span>
+                <span id="gmap-status-pill" class="badge info">Recommended route</span>
+              </div>
+              <h2 id="gmap-primary-instruction" class="guidance-title">Head north on Hallway corridor toward Kitchen</h2>
+              <p id="gmap-secondary-instruction" class="guidance-sub"><span>Landmark ahead:</span> <strong id="gmap-landmark-prompt">refrigerator</strong></p>
+            </div>
+          </div>
+          <div class="guidance-stats">
             <div>
-              <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block">
-                Safety &amp; Reliability State
-              </span>
-              <h3 class="text-base font-bold text-white mt-1">Reliability State Machine</h3>
+              <div class="stat-label">Remaining</div>
+              <div id="gmap-eta-dist" class="stat-value">6.8 m · 2 steps</div>
             </div>
-            <span id="uncertainty-status-badge" class="px-3 py-1 text-xs font-bold rounded-full badge-reliable">
-              RELIABLE
-            </span>
+            <div>
+              <div class="stat-label">Speed</div>
+              <div id="gmap-live-speed" class="stat-value">1.1 m/s</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid g-12">
+        <!-- Map -->
+        <div class="c-8">
+          <div class="card">
+            <div class="legend">
+              <span><i class="sw-route"></i>Recommended route</span>
+              <span><i class="sw-avoid"></i>Avoid</span>
+              <span><i class="sw-track"></i>Agent path</span>
+              <span><i class="sw-you"></i>Agent</span>
+            </div>
+
+            <div class="map-wrap">
+              <canvas id="graph-canvas" width="760" height="460" title="Click a room to set it as the destination"></canvas>
+
+              <div class="map-hud">
+                <div>
+                  <div class="eyebrow">Pace</div>
+                  <div id="hud-speedometer-val" class="num" style="font-weight:600;font-size:13px">Walking: 1.1 m/s</div>
+                </div>
+                <div style="width:1px;height:26px;background:var(--border)"></div>
+                <div>
+                  <div class="eyebrow">Target</div>
+                  <div id="hud-next-room" class="cap" style="font-weight:600;font-size:13px">Kitchen</div>
+                </div>
+              </div>
+
+              <div class="map-controls">
+                <button onclick="recenterMap()" class="map-btn" title="Re-center on agent" aria-label="Re-center">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/><path d="M12 1v3M12 20v3M1 12h3M20 12h3"/></svg>
+                </button>
+                <button onclick="zoomMap(1.15)" class="map-btn" title="Zoom in" aria-label="Zoom in">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                </button>
+                <button onclick="zoomMap(0.85)" class="map-btn" title="Zoom out" aria-label="Zoom out">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14"/></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="muted" style="font-size:12.5px">Click any room on the map to set it as the destination.</div>
+          </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="c-4 stack">
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">Route</span>
+              <span id="gmap-total-steps-badge" class="badge mono">Optimal: 3 steps</span>
+            </div>
+            <div id="gmap-route-steps-container" class="list" style="max-height:230px"></div>
           </div>
 
-          <!-- Shannon Entropy Bar -->
-          <div class="bg-slate-900/60 p-4 rounded-xl border border-white/5 flex flex-col gap-2.5">
-            <div class="flex justify-between items-center text-xs">
-              <span class="text-slate-300 font-medium">Predictive Action Entropy $H(\pi)$:</span>
-              <span id="entropy-value" class="font-mono text-sm text-cyan-300 font-bold">0.32 (Low)</span>
+          <div class="card">
+            <div class="card-head">
+              <span class="card-title">Visited</span>
+              <span id="visited-count-tag" class="badge mono">1 node</span>
             </div>
-            <div class="w-full bg-slate-950 rounded-full h-2.5 border border-white/5 overflow-hidden">
-              <div id="entropy-bar" class="bg-cyan-500 h-full rounded-full transition-all duration-300" style="width: 25%"></div>
-            </div>
-            <p class="text-[11px] text-slate-400 leading-relaxed">
-              Entropy measures action spread. Thresholds: $H &lt; 0.8$ Reliable, $0.8 \le H &lt; 1.3$ Cautious, $H \ge 1.3$ Unreliable.
-            </p>
+            <div id="floorplan-history-list" class="list" style="max-height:190px"></div>
           </div>
 
-          <!-- Confidence Margin Bar -->
-          <div class="bg-slate-900/60 p-4 rounded-xl border border-white/5 flex flex-col gap-2.5">
-            <div class="flex justify-between items-center text-xs">
-              <span class="text-slate-300 font-medium">Top Decision Confidence:</span>
-              <span id="confidence-value" class="font-mono text-sm text-emerald-400 font-bold">84.2%</span>
-            </div>
-            <div class="w-full bg-slate-950 rounded-full h-2.5 border border-white/5 overflow-hidden">
-              <div id="confidence-bar" class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width: 84%"></div>
-            </div>
-            <p class="text-[11px] text-slate-400 leading-relaxed">
-              Probability assigned to top-ranked candidate action over alternative paths.
-            </p>
-          </div>
-
-          <!-- Backtrack Safety Intervention -->
-          <div id="backtrack-alert" class="p-4 bg-rose-950/50 rounded-xl border border-rose-800/60 text-xs flex flex-col gap-2.5">
-            <div class="flex items-center gap-2 text-rose-200 font-semibold">
-              <span>⚠️</span>
-              <span>Deviation Detected! Agent unreliability triggered.</span>
-            </div>
-            <p class="text-rose-300/80 text-[11px] leading-relaxed">
-              The agent has either encountered high entropy, loop repetition, or perceptual dissonance. Backtracking reverts state to the last verified node.
-            </p>
-            <button id="btn-backtrack-alert" class="mt-1 px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl font-bold transition text-xs flex items-center justify-center gap-2 shadow-lg shadow-rose-950/50">
-              <span>↩</span>
-              <span>Execute Emergency Backtrack</span>
+          <div class="card tight" style="flex-direction:row;gap:8px">
+            <button onclick="document.getElementById('btn-step').click()" class="btn btn-block">Next step</button>
+            <button onclick="document.getElementById('btn-play').click()" class="btn btn-dark btn-block">Auto walk</button>
+            <button onclick="document.getElementById('btn-backtrack').click()" class="btn btn-icon" title="Backtrack" aria-label="Backtrack">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 010 11H11"/></svg>
             </button>
           </div>
         </div>
       </div>
+    </section>
 
-      <!-- Real-Time Diagnostic Reasoning Feed (7 Cols) -->
-      <div class="lg:col-span-7 flex flex-col gap-4">
-        <div class="glass-card p-5 sm:p-6 flex flex-col gap-4 flex-1">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
-              Diagnostic Reasoning Feed
-            </span>
-            <span class="text-xs text-slate-400">
-              Sequential State Explanations
-            </span>
+    <!-- ===================================================== -->
+    <!-- RELIABILITY                                            -->
+    <!-- ===================================================== -->
+    <section id="section-uncertainty" class="hidden stack">
+      <div class="grid g-12">
+
+        <div class="c-5">
+          <div class="card" style="height:100%">
+            <div class="card-head">
+              <div>
+                <div class="eyebrow">State machine</div>
+                <div class="card-title" style="font-size:16px;margin-top:4px">Reliability</div>
+              </div>
+              <span id="uncertainty-status-badge" class="badge badge-reliable">RELIABLE</span>
+            </div>
+
+            <div class="well" style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;justify-content:space-between;align-items:baseline">
+                <span style="font-weight:550;font-size:13px">Action entropy H(π)</span>
+                <span id="entropy-value" class="num" style="font-weight:600">0.32 (Low)</span>
+              </div>
+              <div class="meter lg"><div id="entropy-bar" style="width:25%"></div></div>
+              <p class="muted" style="font-size:12px">Reliable below 0.8 · Cautious from 0.8 to 1.3 · Unreliable above 1.3</p>
+            </div>
+
+            <div class="well" style="display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;justify-content:space-between;align-items:baseline">
+                <span style="font-weight:550;font-size:13px">Top-action confidence</span>
+                <span id="confidence-value" class="num" style="font-weight:600">84.2%</span>
+              </div>
+              <div class="meter lg ok"><div id="confidence-bar" style="width:84%"></div></div>
+              <p class="muted" style="font-size:12px">Probability assigned to the highest-ranked candidate.</p>
+            </div>
+
+            <div id="backtrack-alert" class="callout bad">
+              <div class="callout-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0zM12 9v4M12 17h.01"/></svg>
+                Deviation detected
+              </div>
+              <p style="font-size:12.5px;color:var(--text-2)">High entropy, a loop, or a vision–language mismatch was detected. Backtracking returns the agent to the last verified node.</p>
+              <button id="btn-backtrack-alert" class="btn btn-danger">Backtrack to last verified node</button>
+            </div>
           </div>
-
-          <div class="p-4 bg-slate-900/60 rounded-xl border border-white/5 text-sm leading-relaxed">
-            <span class="text-xs font-bold uppercase tracking-wider text-cyan-400 block mb-1.5">
-              Active Assessment:
-            </span>
-            <p id="diagnostic-text" class="text-slate-200">
-              Agent is reliable. Visual perception strongly aligns with instruction trajectory.
-            </p>
-          </div>
-
-          <!-- Mathematical Formulation Context -->
-          <div class="p-4 bg-slate-900/40 rounded-xl border border-white/5 text-xs text-slate-300 flex flex-col gap-2.5 mt-auto">
-            <h4 class="font-bold text-white">Uncertainty Estimation Mechanics:</h4>
-            <ul class="list-disc pl-4 space-y-1.5 text-slate-400 leading-relaxed">
-              <li><strong>Predictive Shannon Entropy:</strong> $H(\pi) = -\sum_{a} \pi(a \mid s, I) \log_2 \pi(a \mid s, I)$.</li>
-              <li><strong>Cross-Modal Dissonance:</strong> Angle deviation between instruction directional cues and candidate vectors.</li>
-              <li><strong>Cycle Detection:</strong> Sliding window of recent viewpoints detecting topological loops $(v_{t} = v_{t-2})$.</li>
-            </ul>
-          </div>
         </div>
-      </div>
 
-    </div>
-  </section>
+        <div class="c-7">
+          <div class="card" style="height:100%">
+            <div class="card-head">
+              <div>
+                <div class="card-title">Diagnostic reasoning</div>
+                <div class="card-sub">Step-by-step explanation of the agent’s state</div>
+              </div>
+            </div>
 
-  <!-- ======================================================== -->
-  <!-- SECTION 4: BENCHMARK ANALYTICS & METRICS -->
-  <!-- ======================================================== -->
-  <section id="section-benchmark" class="hidden flex flex-col gap-4">
-    <!-- Primary 4 KPI Metric Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <div class="glass-card p-5 flex flex-col gap-1 border-cyan-900/30">
-        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Task Success Rate (SR)</span>
-        <div class="flex items-baseline gap-2 mt-2">
-          <span id="metric-sr" class="text-3xl font-black text-cyan-400 font-mono">Pending</span>
-        </div>
-        <p class="text-[11px] text-slate-400 mt-1.5">Binary success: stopped within 3.0m of target goal node.</p>
-      </div>
+            <div class="well" style="padding:16px">
+              <div class="eyebrow" style="color:var(--accent-text);margin-bottom:6px">Current assessment</div>
+              <p id="diagnostic-text" style="font-size:14.5px;line-height:1.6">Agent is reliable. Visual perception strongly aligns with instruction trajectory.</p>
+            </div>
 
-      <div class="glass-card p-5 flex flex-col gap-1 border-emerald-900/30">
-        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Route Efficiency (SPL)</span>
-        <div class="flex items-baseline gap-2 mt-2">
-          <span id="metric-spl" class="text-3xl font-black text-emerald-400 font-mono">--</span>
-        </div>
-        <p class="text-[11px] text-slate-400 mt-1.5">Success weighted by normalized Path Length vs optimal reference.</p>
-      </div>
-
-      <div class="glass-card p-5 flex flex-col gap-1 border-blue-900/30">
-        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Path Fidelity (nDTW)</span>
-        <div class="flex items-baseline gap-2 mt-2">
-          <span id="metric-ndtw" class="text-3xl font-black text-blue-400 font-mono">100.0%</span>
-        </div>
-        <p class="text-[11px] text-slate-400 mt-1.5">Normalized Dynamic Time Warping alignment along path.</p>
-      </div>
-
-      <div class="glass-card p-5 flex flex-col gap-1 border-purple-900/30">
-        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider">Navigation Error (NE)</span>
-        <div class="flex items-baseline gap-2 mt-2">
-          <span id="metric-ne" class="text-3xl font-black text-purple-400 font-mono">7.5 m</span>
-        </div>
-        <p class="text-[11px] text-slate-400 mt-1.5">Geodesic distance between agent final stop and target goal.</p>
-      </div>
-    </div>
-
-    <!-- Multilingual Benchmark Evaluation Matrix Table -->
-    <div class="glass-card p-5 sm:p-6 flex flex-col gap-4">
-      <div class="flex items-center justify-between flex-wrap gap-2">
-        <div>
-          <h3 class="text-base font-bold text-white">Full RxR Multilingual Evaluation Benchmark Matrix</h3>
-          <p class="text-xs text-slate-400 mt-0.5">Empirical validation across 21 test configurations, 3 languages, and Seen vs Unseen environments</p>
-        </div>
-        <span class="px-3 py-1 text-xs font-bold rounded-xl bg-emerald-950/80 text-emerald-400 border border-emerald-800/60 font-mono">
-          Overall Success: 90.5% (19/21)
-        </span>
-      </div>
-
-      <div class="overflow-x-auto rounded-xl border border-white/5 mt-1">
-        <table class="w-full text-xs text-left">
-          <thead class="bg-slate-900/80 text-slate-400 uppercase text-[10px] tracking-wider border-b border-white/5">
-            <tr>
-              <th class="p-3.5">Language</th>
-              <th class="p-3.5">Environment Split</th>
-              <th class="p-3.5">Episodes Evaluated</th>
-              <th class="p-3.5">Success Rate (SR)</th>
-              <th class="p-3.5">SPL</th>
-              <th class="p-3.5">nDTW</th>
-              <th class="p-3.5">Nav Error (NE)</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-white/5 font-mono text-slate-300">
-            <tr class="hover:bg-white/[0.02]">
-              <td class="p-3.5 font-semibold text-white">English (en)</td>
-              <td class="p-3.5 text-emerald-400">Val-Seen</td>
-              <td class="p-3.5">4 episodes</td>
-              <td class="p-3.5 text-emerald-400 font-bold">100.0%</td>
-              <td class="p-3.5">0.963</td>
-              <td class="p-3.5">94.7%</td>
-              <td class="p-3.5">0.00 m</td>
-            </tr>
-            <tr class="hover:bg-white/[0.02]">
-              <td class="p-3.5 font-semibold text-white">English (en)</td>
-              <td class="p-3.5 text-cyan-400">Val-Unseen</td>
-              <td class="p-3.5">3 episodes</td>
-              <td class="p-3.5 text-emerald-400 font-bold">100.0%</td>
-              <td class="p-3.5">0.965</td>
-              <td class="p-3.5">95.4%</td>
-              <td class="p-3.5">0.00 m</td>
-            </tr>
-            <tr class="hover:bg-white/[0.02]">
-              <td class="p-3.5 font-semibold text-white">हिंदी Hindi (hi)</td>
-              <td class="p-3.5 text-emerald-400">Val-Seen</td>
-              <td class="p-3.5">4 episodes</td>
-              <td class="p-3.5 text-emerald-400 font-bold">100.0%</td>
-              <td class="p-3.5">0.963</td>
-              <td class="p-3.5">94.7%</td>
-              <td class="p-3.5">0.00 m</td>
-            </tr>
-            <tr class="hover:bg-white/[0.02]">
-              <td class="p-3.5 font-semibold text-white">हिंदी Hindi (hi)</td>
-              <td class="p-3.5 text-cyan-400">Val-Unseen</td>
-              <td class="p-3.5">3 episodes</td>
-              <td class="p-3.5 text-amber-400 font-bold">66.7%</td>
-              <td class="p-3.5">0.638</td>
-              <td class="p-3.5">91.3%</td>
-              <td class="p-3.5">1.25 m</td>
-            </tr>
-            <tr class="hover:bg-white/[0.02]">
-              <td class="p-3.5 font-semibold text-white">తెలుగు Telugu (te)</td>
-              <td class="p-3.5 text-emerald-400">Val-Seen</td>
-              <td class="p-3.5">4 episodes</td>
-              <td class="p-3.5 text-emerald-400 font-bold">100.0%</td>
-              <td class="p-3.5">0.963</td>
-              <td class="p-3.5">94.7%</td>
-              <td class="p-3.5">0.00 m</td>
-            </tr>
-            <tr class="hover:bg-white/[0.02]">
-              <td class="p-3.5 font-semibold text-white">తెలుగు Telugu (te)</td>
-              <td class="p-3.5 text-cyan-400">Val-Unseen</td>
-              <td class="p-3.5">3 episodes</td>
-              <td class="p-3.5 text-amber-400 font-bold">66.7%</td>
-              <td class="p-3.5">0.640</td>
-              <td class="p-3.5">92.9%</td>
-              <td class="p-3.5">1.21 m</td>
-            </tr>
-            <tr class="bg-cyan-950/20 font-bold text-cyan-300">
-              <td class="p-3.5">Total / Overall</td>
-              <td class="p-3.5">Seen + Unseen</td>
-              <td class="p-3.5">21 episodes</td>
-              <td class="p-3.5 text-emerald-400">90.5%</td>
-              <td class="p-3.5">0.865</td>
-              <td class="p-3.5">94.1%</td>
-              <td class="p-3.5">0.35 m</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- ======================================================== -->
-  <!-- SECTION 5: STRUCTURED OVERVIEW (All Sections Integrated) -->
-  <!-- ======================================================== -->
-  <section id="section-overview" class="hidden flex flex-col gap-4">
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      
-      <!-- Card A: Instruction & State Reasoning Summary -->
-      <div class="glass-card p-5 flex flex-col gap-3.5">
-        <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
-          Natural-Language Instruction &amp; Goal
-        </span>
-        <div id="overview-instruction-copy" class="p-4 bg-slate-900/60 rounded-xl border border-white/5 text-sm leading-relaxed">
-          <!-- Synced instruction text -->
-        </div>
-        <div class="grid grid-cols-2 gap-3 text-xs">
-          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5">
-            <span class="text-slate-400 block text-[11px]">Current Node:</span>
-            <span id="overview-node-text" class="text-sm font-mono text-cyan-300 font-semibold mt-0.5 block">seen1_hallway</span>
-            <span id="current-node-text" class="hidden">seen1_hallway</span>
-          </div>
-          <div class="bg-slate-900/60 p-3 rounded-xl border border-white/5">
-            <span class="text-slate-400 block text-[11px]">Agent Heading:</span>
-            <span id="overview-heading-text" class="text-sm font-semibold text-white mt-0.5 block">0.0&deg;</span>
-            <span id="current-room-text" class="hidden">hallway</span>
+            <div style="margin-top:auto">
+              <div class="card-title" style="margin-bottom:10px">How uncertainty is estimated</div>
+              <ul class="bullets">
+                <li><strong>Predictive entropy.</strong> <span class="formula">H(π) = −Σ π(a|s,I) · log₂ π(a|s,I)</span></li>
+                <li><strong>Cross-modal dissonance.</strong> Angle between the directional cue in the instruction and each candidate vector.</li>
+                <li><strong>Cycle detection.</strong> A sliding window over recent viewpoints flags loops such as <span class="formula">vₜ = vₜ₋₂</span>.</li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
+    </section>
 
-      <!-- Card B: Viewport Preview -->
-      <div class="glass-card p-5 flex flex-col gap-3.5">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-slate-300 uppercase tracking-wider">
-            First-Person Viewport Preview
-          </span>
-          <span id="overview-room-tag" class="text-xs font-semibold text-white capitalize bg-slate-900/90 px-2.5 py-0.5 rounded-lg border border-white/5">
-            Hallway
-          </span>
+    <!-- ===================================================== -->
+    <!-- BENCHMARK                                              -->
+    <!-- ===================================================== -->
+    <section id="section-benchmark" class="hidden stack">
+
+      <div class="grid g-4">
+        <div class="card metric">
+          <span class="eyebrow">Success rate</span>
+          <span id="metric-sr" class="metric-value v-accent" style="margin-top:2px">Pending</span>
+          <p class="metric-note">Stopped within 3.0 m of the goal node.</p>
         </div>
-        <div class="p-4 bg-slate-950/80 rounded-xl border border-white/5 flex items-center gap-4">
-          <div id="overview-room-icon" class="w-14 h-14 rounded-2xl bg-cyan-950/60 border border-cyan-500/30 flex items-center justify-center text-3xl">
-            🏠
-          </div>
+        <div class="card metric">
+          <span class="eyebrow">SPL</span>
+          <span id="metric-spl" class="metric-value" style="margin-top:2px">--</span>
+          <p class="metric-note">Success weighted by path length against the optimal route.</p>
+        </div>
+        <div class="card metric">
+          <span class="eyebrow">nDTW</span>
+          <span id="metric-ndtw" class="metric-value" style="margin-top:2px">100.0%</span>
+          <p class="metric-note">Normalized dynamic time warping, path fidelity.</p>
+        </div>
+        <div class="card metric">
+          <span class="eyebrow">Navigation error</span>
+          <span id="metric-ne" class="metric-value" style="margin-top:2px">7.5 m</span>
+          <p class="metric-note">Distance between the final stop and the goal.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
           <div>
-            <h4 id="overview-room-name" class="text-base font-bold text-white capitalize">Hallway</h4>
-            <p id="overview-room-desc" class="text-xs text-slate-400 italic mt-0.5">Ahead is the open hallway leading deeper into the house</p>
+            <div class="card-title" style="font-size:16px">RxR multilingual evaluation</div>
+            <div class="card-sub">21 episodes · 3 languages · seen and unseen environments</div>
           </div>
+          <span class="badge ok with-dot">Overall success 90.5% (19/21)</span>
         </div>
-        <div class="flex items-center justify-between text-xs text-slate-400 pt-1">
-          <span>Traversed: <strong id="overview-dist-text" class="text-white font-mono">0.0 m</strong></span>
-          <button onclick="switchTab('action')" class="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center gap-1">
-            <span>Open Full Action Studio</span>
-            <span>&rarr;</span>
-          </button>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Language</th><th>Split</th><th>Episodes</th><th>SR</th><th>SPL</th><th>nDTW</th><th>NE</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="lang">English</td><td><span class="badge ok">Val-Seen</span></td><td>4</td><td class="v-ok" style="font-weight:600">100.0%</td><td>0.963</td><td>94.7%</td><td>0.00 m</td></tr>
+              <tr><td class="lang">English</td><td><span class="badge info">Val-Unseen</span></td><td>3</td><td class="v-ok" style="font-weight:600">100.0%</td><td>0.965</td><td>95.4%</td><td>0.00 m</td></tr>
+              <tr><td class="lang">हिंदी · Hindi</td><td><span class="badge ok">Val-Seen</span></td><td>4</td><td class="v-ok" style="font-weight:600">100.0%</td><td>0.963</td><td>94.7%</td><td>0.00 m</td></tr>
+              <tr><td class="lang">हिंदी · Hindi</td><td><span class="badge info">Val-Unseen</span></td><td>3</td><td class="v-warn" style="font-weight:600">66.7%</td><td>0.638</td><td>91.3%</td><td>1.25 m</td></tr>
+              <tr><td class="lang">తెలుగు · Telugu</td><td><span class="badge ok">Val-Seen</span></td><td>4</td><td class="v-ok" style="font-weight:600">100.0%</td><td>0.963</td><td>94.7%</td><td>0.00 m</td></tr>
+              <tr><td class="lang">తెలుగు · Telugu</td><td><span class="badge info">Val-Unseen</span></td><td>3</td><td class="v-warn" style="font-weight:600">66.7%</td><td>0.640</td><td>92.9%</td><td>1.21 m</td></tr>
+              <tr class="total"><td>Overall</td><td>Seen + Unseen</td><td>21</td><td class="v-ok">90.5%</td><td>0.865</td><td>94.1%</td><td>0.35 m</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
+    </section>
 
-    </div>
-  </section>
+    <!-- ===================================================== -->
+    <!-- OVERVIEW                                               -->
+    <!-- ===================================================== -->
+    <section id="section-overview" class="hidden stack">
+      <div class="grid g-2">
+
+        <div class="card">
+          <div class="card-title">Instruction and goal</div>
+          <div id="overview-instruction-copy" class="well" style="padding:16px;font-size:14.5px;line-height:1.65"></div>
+          <div class="grid g-2" style="gap:12px">
+            <div class="well">
+              <div class="kv-label">Current node</div>
+              <div id="overview-node-text" class="kv-value mono">seen1_hallway</div>
+              <span id="current-node-text" class="hidden">seen1_hallway</span>
+            </div>
+            <div class="well">
+              <div class="kv-label">Heading</div>
+              <div id="overview-heading-text" class="kv-value num">0.0°</div>
+              <span id="current-room-text" class="hidden">hallway</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <span class="card-title">Viewport preview</span>
+            <span id="overview-room-tag" class="tag">Hallway</span>
+          </div>
+          <div class="well" style="display:flex;align-items:center;gap:16px;padding:16px">
+            <div id="overview-room-icon" class="stage-icon" style="width:48px;height:48px">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg>
+            </div>
+            <div>
+              <h4 id="overview-room-name" class="cap" style="font-size:16px;font-weight:650;letter-spacing:-0.02em">Hallway</h4>
+              <p id="overview-room-desc" class="muted" style="font-size:13px;margin-top:2px">Ahead is the open hallway leading deeper into the house</p>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;font-size:13px" class="muted">
+            <span>Traversed <strong id="overview-dist-text" class="num" style="color:var(--text)">0.0 m</strong></span>
+            <button onclick="switchTab('action')" class="link" style="display:inline-flex;align-items:center;gap:6px">
+              Open studio
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
 
   <script src="app.js"></script>
 </body>
